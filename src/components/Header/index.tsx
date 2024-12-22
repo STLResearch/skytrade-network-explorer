@@ -19,14 +19,14 @@ function Logo({ className, ...props }: { className?: string }) {
       <div className="group flex items-center gap-2">
         <HeliumIcon className="h-7 w-7 fill-zinc-600 transition group-hover:fill-zinc-800 dark:fill-zinc-200 dark:group-hover:fill-zinc-100" />
         <div className="text-lg tracking-tight text-zinc-600 transition group-hover:text-zinc-700 dark:text-zinc-200 group-hover:dark:text-zinc-100 sm:text-xl">
-          Explorer
+          SkyTrade Explorer
         </div>
       </div>
     </Link>
   )
 }
 
-export function Header() {
+export function Header(props: { toggleTab: () => void | undefined }) {
   return (
     <header className="fixed bottom-auto z-50 h-24 pt-6">
       <Container className="fixed w-full">
@@ -39,10 +39,10 @@ export function Header() {
             <DesktopNavigation className="pointer-events-auto hidden md:block" />
           </div>
           <div className="flex justify-end gap-4 md:flex-1">
-            <div className="pointer-events-auto">
+            {/* <div className="pointer-events-auto">
               <HotspotSearch />
-            </div>
-            <div className="pointer-events-auto py-2 sm:block">
+            </div> */}
+            {/* <div className="pointer-events-auto py-2 sm:block">
               <Link
                 href="/preferences"
                 className="group"
@@ -50,17 +50,7 @@ export function Header() {
               >
                 <Cog6ToothIcon className="h-6 w-6 stroke-zinc-500 transition group-hover:stroke-zinc-700 dark:stroke-zinc-400 group-hover:dark:stroke-zinc-100" />
               </Link>
-            </div>
-            <div className="pointer-events-auto hidden py-2 sm:block">
-              <Link
-                href="https://github.com/helium/network-explorer"
-                className="group"
-                target="_blank"
-                aria-label="GitHub"
-              >
-                <GitHubIcon className="h-6 w-6 fill-zinc-500 transition group-hover:fill-zinc-700 dark:fill-zinc-400 group-hover:dark:fill-zinc-100" />
-              </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </Container>

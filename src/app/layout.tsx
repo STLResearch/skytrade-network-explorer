@@ -54,6 +54,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const toggleTab = () => {
+    return
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>
@@ -63,12 +67,6 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link rel="dns-prefetch" href="https://pmtiles.heliumfoundation.wtf/" />
-        <link
-          rel="preconnect"
-          href="https://mt.hotspotty.org/"
-          crossOrigin=""
-        />
-        <link rel="dns-prefetch" href="https://mt.hotspotty.org/" />
       </Head>
       <body className="absolute inset-0 bg-zinc-50 dark:bg-black">
         <Providers>
@@ -80,8 +78,8 @@ export default function RootLayout({
           <Suspense>
             <GATracker />
           </Suspense>
-          <Header />
-          <HotspotsMap>{children}</HotspotsMap>
+          <Header toggleTab={toggleTab} />
+          {children}
         </Providers>
       </body>
     </html>

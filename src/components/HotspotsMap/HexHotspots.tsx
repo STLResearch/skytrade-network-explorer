@@ -1,7 +1,7 @@
 "use client"
 
-import { Tooltip } from "@/app/stats/components/Tooltip"
-import { PreferencesProvider } from "@/context/usePreferences"
+// import { Tooltip } from "@/app/stats/components/Tooltip"
+// import { PreferencesProvider } from "@/context/usePreferences"
 import clsx from "clsx"
 import { HexHotSpotItem } from "./HexHotspotItem"
 
@@ -47,20 +47,36 @@ function getGroupedHotspots(hotspots: Hotspot[]) {
   return groupedHotspots
 }
 
-export async function HexHotspots({ hexId }: { hexId: string }) {
-  const hotspots = (await fetch(
-    `${process.env.NEXT_PUBLIC_HELIUMGEEK_EXPLORER_API_URL}/hex/${hexId}`,
+export function HexHotspots({ hexId }: { hexId: string }) {
+  // this is just for demo once we have real database we will fetch location detail with id
+  console.log("this is hexId")
+  console.log(hexId)
+  setTimeout(() => {
+    console.log("waiting")
+  }, 3000)
+  const hotspots: Hotspot[] = [
     {
-      headers: {
-        "x-api-key": `${process.env.NEXT_PUBLIC_HELIUMGEEK_EXPLORER_API_TOKEN}`,
-        "Content-Type": "application/json",
+      address: "112tAUfmQ5orU7A1mVWQ3PPQXwwi5GEReMkKgMo5LKXxHgqpoAdt",
+      name: "Air space",
+      status: 0,
+      statusString: "active",
+      capabilities: {
+        mobile: false,
+        iot: true,
+        cbrs: false,
+        wifi: false,
       },
-    }
-  ).then((res) => res.json())) as Hotspot[]
+      location: {
+        // hex: '8c3dac39da5c5ff',
+        hex: hexId,
+      },
+    },
+  ]
 
   const groupedList = getGroupedHotspots(hotspots)
 
   if (hotspots.length === 0) {
+    console.log("dwdw")
     return (
       <div className="mb-2 text-sm font-medium text-gray-900 dark:text-zinc-200">
         This hex contains no Hotspots.
@@ -84,26 +100,26 @@ export async function HexHotspots({ hexId }: { hexId: string }) {
               >
                 <div className="flex gap-2">
                   <span className="capitalize">{group}</span>
-                  <Tooltip
+                  {/* <Tooltip
                     id={group}
                     description={TOOLTIP_DESCRIPTIONS[group]}
                     width="tiny"
-                  />
+                  /> */}
                 </div>
                 <span className="ml-2 text-xs font-normal">
                   {groupedList[group].length} Hotspots
                 </span>
               </div>
-              <PreferencesProvider>
-                <ul
-                  role="list"
-                  className="z-0 flex-1 divide-y divide-gray-200 overflow-y-auto dark:divide-white/10"
-                >
-                  {groupedList[group].map((hotspot) => (
-                    <HexHotSpotItem key={hotspot.address} hotspot={hotspot} />
-                  ))}
-                </ul>
-              </PreferencesProvider>
+              {/* <PreferencesProvider> */}
+              <ul
+                role="list"
+                className="z-0 flex-1 divide-y divide-gray-200 overflow-y-auto dark:divide-white/10"
+              >
+                {groupedList[group].map((hotspot) => (
+                  <HexHotSpotItem key={hotspot.address} hotspot={hotspot} />
+                ))}
+              </ul>
+              {/* </PreferencesProvider> */}
             </div>
           )
         }

@@ -1,4 +1,5 @@
-import { CoordPair } from "h3-js"
+import { CoordPair, cellsToMultiPolygon } from "h3-js"
+import * as h3 from "h3-js"
 import { HeliumIotIcon } from "../icons/HeliumIotIcon"
 import { HeliumMobileIcon } from "../icons/HeliumMobileIcon"
 
@@ -28,6 +29,193 @@ export const POINTS_AND_HEXES_OVERLAP = 2
 
 export const HELIUM_IOT_COLOR = "#27EE76"
 export const HELIUM_MOBILE_COLOR = "#009FF9"
+
+const h3Indexes = ["89283082813ffff", "8928308281bffff"]
+// this is for testing actual data will come from api remove this once api set
+// Sample data structure for custom points
+// console.log(h3.cellToLatLng(h3Indexes[0]))
+// export const samplePointsData = {
+//   type: "FeatureCollection",
+//   features: [
+//     {
+//       type: "Feature",
+//       geometry: {
+//         type: "Point",
+//         coordinates: h3.cellToLatLng(h3Indexes[0])
+//       },
+//       properties: {
+//         id: "sample-point-1",
+//         name: "Sample Point 1"
+//       }
+//     },
+//     {
+//       type: "Feature",
+//       geometry: {
+//         type: "Point",
+//         coordinates: h3.cellToLatLng(h3Indexes[1])
+//       },
+//       properties: {
+//         id: "sample-point-2",
+//         name: "Sample Point 2"
+//       }
+//     }
+//   ]
+// };
+
+// // Sample data structure for custom hexes
+
+// export const sampleHexesData = {
+//   type: "FeatureCollection",
+//   features: [
+//     {
+//       type: "Feature",
+//       geometry: {
+//         type: "MultiPolygon",
+//         coordinates: cellsToMultiPolygon(h3Indexes, true)
+//       },
+//       properties: {
+
+//       }
+//     }
+//   ]
+// };
+
+export const samplePointsData = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [77.4126, 23.2599], // Bhopal
+      },
+      properties: {
+        id: "point1",
+        name: "Sample Point 1",
+      },
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [78.4126, 25.2599], // Jaipur
+      },
+      properties: {
+        id: "point2",
+        name: "Sample Point 2",
+      },
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [72.8777, 19.076], // Mumbai
+      },
+      properties: {
+        id: "point3",
+        name: "Sample Point 3",
+      },
+    },
+    // {
+    //   type: "Feature",
+    //   geometry: {
+    //     type: "Point",
+    //     coordinates: [77.1025, 28.7041] // Delhi
+    //   },
+    //   properties: {
+    //     id: "point4",
+    //     name: "Sample Point 4"
+    //   }
+    // },
+    // {
+    //   type: "Feature",
+    //   geometry: {
+    //     type: "Point",
+    //     coordinates: [88.3639, 22.5726] // Kolkata
+    //   },
+    //   properties: {
+    //     id: "point5",
+    //     name: "Sample Point 5"
+    //   }
+    // }
+  ],
+}
+
+// Sample data structure for custom hexes
+export const sampleHexesData = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      geometry: {
+        type: "MultiPolygon",
+        coordinates: [
+          [
+            [
+              [77.4126, 23.2599], // Bhopal
+              [77.4136, 23.2609],
+              [77.4146, 23.2609],
+              [77.4156, 23.2599],
+              [77.4146, 23.2589],
+              [77.4136, 23.2589],
+              [77.4126, 23.2599],
+            ],
+          ],
+        ],
+      },
+      properties: {
+        id: "89283082813ffff",
+        count: 10,
+      },
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "MultiPolygon",
+        coordinates: [
+          [
+            [
+              [78.4126, 25.2599], // Jaipur
+              [78.4136, 25.2609],
+              [78.4146, 25.2609],
+              [78.4156, 25.2599],
+              [78.4146, 25.2589],
+              [78.4136, 25.2589],
+              [78.4126, 25.2599],
+            ],
+          ],
+        ],
+      },
+      properties: {
+        id: "89283082813ffff",
+        count: 15,
+      },
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "MultiPolygon",
+        coordinates: [
+          [
+            [
+              [72.8777, 19.076], // Mumbai
+              [72.8787, 19.077],
+              [72.8797, 19.077],
+              [72.8807, 19.076],
+              [72.8797, 19.075],
+              [72.8787, 19.075],
+              [72.8777, 19.076],
+            ],
+          ],
+        ],
+      },
+      properties: {
+        id: "hex3",
+        count: 20,
+      },
+    },
+  ],
+}
 
 export const getHexFillStyle = (color: string): mapboxgl.FillPaint => ({
   "fill-color": color,
@@ -133,6 +321,34 @@ export const networkLayers: { [network: string]: NetworkCoverageLayerOption } =
       hexes: {
         sourcePath: "hg.gateways-rewarded-r8.hexes.json",
         sourceLayer: "hg.gateways-rewarded-r8.hexes",
+      },
+    },
+    custom: {
+      name: "CUSTOM",
+      icon: HeliumMobileIcon,
+      color: "#266efe",
+      sourceDomain: "",
+      points: {
+        sourcePath: "",
+        sourceLayer: "custom_points_layer",
+      },
+      hexes: {
+        sourcePath: "",
+        sourceLayer: "custom_hexes_layer",
+      },
+    },
+    customDrone: {
+      name: "CUSTOM",
+      icon: HeliumMobileIcon,
+      color: "#27EE00",
+      sourceDomain: "",
+      points: {
+        sourcePath: "",
+        sourceLayer: "custom_points_layer",
+      },
+      hexes: {
+        sourcePath: "",
+        sourceLayer: "custom_hexes_layer",
       },
     },
   }

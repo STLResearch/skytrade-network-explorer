@@ -20,6 +20,8 @@ import Map, {
   MapStyle,
   NavigationControl,
   Source,
+  Marker,
+  Popup,
 } from "react-map-gl"
 import { gaEvent } from "../GATracker"
 import { NetworkCoverageLayer } from "./NetworkCoverageLayer"
@@ -36,7 +38,9 @@ import {
   networkLayers,
 } from "./utils"
 
-export function HotspotsMap({ children }: { children: React.ReactNode }) {
+import Sidebar from "../sidebar/index"
+
+export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const { resolvedTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
@@ -45,6 +49,9 @@ export function HotspotsMap({ children }: { children: React.ReactNode }) {
   const mapRef = useRef<MapRef>(null)
   const [selectedHex, setSelectedHex] = useState<HexFeatureDetails | null>(null)
   const [cursor, setCursor] = useState("")
+  const [currentTab, setCurrentTab] = useState(tab)
+  const [showPopup, setShowPopup] = useState(false)
+  const [selectedHexId, setSelectedHexId] = useState(null)
 
   useEffect(() => {
     let protocol = new Protocol()
@@ -94,13 +101,14 @@ export function HotspotsMap({ children }: { children: React.ReactNode }) {
     const newZoom = ZOOM_BY_HEX_RESOLUTION[hexResolution]
     if (zoom < newZoom - 3 || !bounds.contains([lng, lat])) {
       // Fly to the hex if it's not visible in the current viewport, or if it's not zoomed in enough
-      map.flyTo({ center: [lng, lat], zoom: newZoom })
+      // TODO uncomment this after
+      // map.flyTo({ center: [lng, lat], zoom: newZoom })
     }
   }, [])
 
   const selectHexByPathname = useCallback(() => {
     if (!mapRef.current) return
-
+    console.log(mapRef)
     if (segments.length === 2 && segments[0] === "hex") {
       const hexId = segments[1]
       if (selectedHex?.hexId !== hexId) {
@@ -119,11 +127,14 @@ export function HotspotsMap({ children }: { children: React.ReactNode }) {
     (event: MapLayerMouseEvent) => {
       event.features?.forEach(({ layer, properties }) => {
         if (layer.id !== "hexes_layer" || !properties?.id) return
-        if (selectedHex?.hexId === properties.id) {
-          router.push("/")
-        } else {
-          router.push(`/hex/${properties.id}`)
-        }
+        // if (selectedHex?.hexId === properties.id) {
+        //   // router.push("/radar")
+        // } else {
+        //   // router.push(`/radar/hex/8c3dac39da5c5ff`)
+        // }
+        setSelectedHexId(properties.id)
+        console.log("clicked " + properties.id)
+        setShowPopup(!showPopup)
       })
     },
     [router, selectedHex?.hexId]
@@ -136,6 +147,10 @@ export function HotspotsMap({ children }: { children: React.ReactNode }) {
   const onMouseEnter = useCallback(() => setCursor("pointer"), [])
   const onMouseLeave = useCallback(() => setCursor(""), [])
 
+  const handleClose = () => {
+    console.log("close")
+    setShowPopup(false)
+  }
   return (
     <Map
       initialViewState={INITIAL_MAP_VIEW_STATE}
@@ -156,10 +171,17 @@ export function HotspotsMap({ children }: { children: React.ReactNode }) {
       attributionControl={false}
     >
       <NavigationControl position="bottom-left" showCompass={false} />
-      {children}
 
-      {segment !== "mobile" && (
+      {showPopup && <Sidebar hexId={selectedHexId} onClose={handleClose} />}
+      {/* {segment !== "mobile" && (
         <NetworkCoverageLayer layer={networkLayers.iot} />
+      )} */}
+      {currentTab === "drone" && (
+        <NetworkCoverageLayer layer={networkLayers.customDrone} />
+      )}
+      {/* <NetworkCoverageLayer layer={networkLayers.custom} /> */}
+      {currentTab === "radar" && (
+        <NetworkCoverageLayer layer={networkLayers.custom} />
       )}
 
       {selectedHex && (
