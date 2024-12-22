@@ -9,12 +9,10 @@ function NavItem({
   href,
   layoutSegments,
   children,
-  toggleTab,
 }: {
   href: string
   layoutSegments: (string | null)[]
   children: React.ReactNode
-  toggleTab: () => void | undefined
 }) {
   const selectedLayoutSegment = useSelectedLayoutSegment()
   console.log(selectedLayoutSegment)
