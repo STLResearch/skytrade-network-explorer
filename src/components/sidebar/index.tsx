@@ -43,7 +43,6 @@ export default function Page({
         </button>
       </div>
       {/* <Suspense fallback={<LoadingHexHotspots count={3} />}> */}
-      {/* @ts-expect-error Async Server Component */}
       <HexHotspots hexId={hexId} />
       {/* </Suspense> */}
     </div>

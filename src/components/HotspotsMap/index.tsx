@@ -51,7 +51,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const [cursor, setCursor] = useState("")
   const [currentTab, setCurrentTab] = useState(tab)
   const [showPopup, setShowPopup] = useState(false)
-  const [selectedHexId, setSelectedHexId] = useState(null)
+  const [selectedHexId, setSelectedHexId] = useState("")
 
   useEffect(() => {
     let protocol = new Protocol()
