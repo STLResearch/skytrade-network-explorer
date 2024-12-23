@@ -33,10 +33,9 @@ export const metadata = {
   },
   openGraph: {
     title: "Helium Explorer",
-    description:
-      "Helium Explorer is an open source network explorer for the Helium network",
-    url: "https://explorer.helium.com",
-    siteName: "Helium Explorer",
+    description: "Skytrade Network explorer",
+    url: "https://skytrade-network-explorer.vercel.app/",
+    siteName: "Skytrade Explorer",
     images: [
       {
         url: "/og.png",
