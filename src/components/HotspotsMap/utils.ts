@@ -4,7 +4,7 @@ import { HeliumIotIcon } from "../icons/HeliumIotIcon"
 import { HeliumMobileIcon } from "../icons/HeliumMobileIcon"
 
 export const MIN_MAP_ZOOM = 2
-export const MAX_MAP_ZOOM = 14
+export const MAX_MAP_ZOOM = 10
 
 const WORLD_BOUNDS: [CoordPair, CoordPair] = [
   [-134.827109, 57.785781],
@@ -20,7 +20,7 @@ export const MAP_CONTAINER_STYLE: React.CSSProperties = {
   width: "100%",
   overflow: "hidden",
   position: "relative",
-  backgroundColor: "rgb(19,24,37)",
+  backgroundColor: "rgb(20, 20, 20)",
 }
 
 export const MIN_HEXES_ZOOM = 7

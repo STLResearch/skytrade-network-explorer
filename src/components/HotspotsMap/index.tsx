@@ -39,6 +39,7 @@ import {
 } from "./utils"
 
 import Sidebar from "../sidebar/index"
+import { st } from "../../styles/mapStyle"
 
 export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const { resolvedTheme } = useTheme()
@@ -52,30 +53,39 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const [currentTab, setCurrentTab] = useState(tab)
   const [showPopup, setShowPopup] = useState(false)
   const [selectedHexId, setSelectedHexId] = useState("")
+  const [mapLoaded, setMapLoaded] = useState(false)
 
   useEffect(() => {
     let protocol = new Protocol()
-    maplibregl.addProtocol("pmtiles", protocol.tile)
+    maplibregl.addProtocol("basemaps", protocol.tile)
     return () => {
-      maplibregl.removeProtocol("pmtiles")
+      maplibregl.removeProtocol("basemaps")
     }
   }, [])
+  console.log("map rendering")
 
   const mapStyle = useMemo(() => {
     const style: MapStyle = {
       version: 8,
       sources: {
-        protomaps: {
+        carto: {
           type: "vector",
-          tiles: [`${process.env.NEXT_PUBLIC_PMTILES_URL}/{z}/{x}/{y}.mvt`],
+          url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json",
         },
       },
       glyphs: "https://cdn.protomaps.com/fonts/pbf/{fontstack}/{range}.pbf",
-      layers: resolvedTheme === "dark" ? mapLayersDark : mapLayersLight,
+      sprite:
+        "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/sprite",
+      layers: mapLayersDark,
     }
     return style
   }, [resolvedTheme])
 
+  const newMapStyle = useMemo(() => {
+    const mapStyleString = JSON.stringify(st)
+    const mapStyleObject = JSON.parse(mapStyleString)
+    return mapStyleObject
+  }, [resolvedTheme])
   const selectHex = useCallback((hexId: string | null) => {
     if (!hexId) {
       setSelectedHex(null)
@@ -120,6 +130,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   }, [pathname, segments, selectHex, selectedHex?.hexId])
 
   useEffect(() => {
+    setMapLoaded(true)
     selectHexByPathname()
   }, [selectHexByPathname])
 
@@ -147,17 +158,20 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const onMouseEnter = useCallback(() => setCursor("pointer"), [])
   const onMouseLeave = useCallback(() => setCursor(""), [])
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     console.log("close")
     setShowPopup(false)
-  }
+  }, [])
+
+  // const mapStyleString = JSON.stringify(st)
+  // const mapStyleObject = JSON.parse(mapStyleString)
   return (
     <Map
       initialViewState={INITIAL_MAP_VIEW_STATE}
       minZoom={MIN_MAP_ZOOM}
       maxZoom={MAX_MAP_ZOOM}
       style={MAP_CONTAINER_STYLE}
-      mapStyle={mapStyle}
+      mapStyle={newMapStyle}
       localFontFamily="NotoSans-Regular"
       // @ts-ignore
       mapLib={maplibregl}
