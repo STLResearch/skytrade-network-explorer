@@ -1,42 +1,4 @@
-# Helium Network Explorer
-
-## Development
-
-### Installation
-
-Requirements: [Node.js 18](https://nodejs.org/) or later
-
-[Install pnpm](https://pnpm.io/installation) if you haven't already, for example using [brew](https://brew.sh/):
-
-```bash
-brew install pnpm
-```
-
-Download the dependencies:
-
-```bash
-pnpm install
-```
-
-Add environment variables:
-
-```bash
-cp .env.example .env.local
-```
-
-Add your [Dune API key](https://dune.com/docs/api/#obtaining-an-api-key)
-
-Setup a PostgreSQL database and add your DATABASE_URL. It will default to using an in memory database if you don't set one up.
-
-### Run locally
-
-Setup the database:
-
-```bash
-pnpm db:migrate
-```
-
-Then, run the development server:
+To run the development server:
 
 ```bash
 pnpm dev
