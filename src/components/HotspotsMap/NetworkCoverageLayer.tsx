@@ -103,7 +103,7 @@ const hexesDataTyped = validateFeatureCollection(hexesData)
 const pointsDataTyped = validateFeatureCollection(pointsData)
 
 export function NetworkCoverageLayer({
-  layer: { color },
+  layer: { color, sourceDomain, points, hexes },
   ...props
 }: {
   layer: NetworkCoverageLayerOption

@@ -20,8 +20,6 @@ import Map, {
   MapStyle,
   NavigationControl,
   Source,
-  Marker,
-  Popup,
 } from "react-map-gl"
 import { gaEvent } from "../GATracker"
 import { NetworkCoverageLayer } from "./NetworkCoverageLayer"

@@ -23,7 +23,7 @@ export const MAP_CONTAINER_STYLE: React.CSSProperties = {
   backgroundColor: "rgb(20, 20, 20)",
 }
 
-export const MIN_HEXES_ZOOM = 7
+export const MIN_HEXES_ZOOM = 5
 export const MIN_HEX_LABELS_ZOOM = 11
 export const POINTS_AND_HEXES_OVERLAP = 2
 
@@ -327,13 +327,13 @@ export const networkLayers: { [network: string]: NetworkCoverageLayerOption } =
       name: "CUSTOM",
       icon: HeliumMobileIcon,
       color: "#266efe",
-      sourceDomain: "",
+      sourceDomain: "http://127.0.0.1:3000",
       points: {
-        sourcePath: "",
+        sourcePath: "/radar/points",
         sourceLayer: "custom_points_layer",
       },
       hexes: {
-        sourcePath: "",
+        sourcePath: "/radar/hexes",
         sourceLayer: "custom_hexes_layer",
       },
     },
@@ -341,13 +341,13 @@ export const networkLayers: { [network: string]: NetworkCoverageLayerOption } =
       name: "CUSTOM",
       icon: HeliumMobileIcon,
       color: "#27EE00",
-      sourceDomain: "",
+      sourceDomain: "http://127.0.0.1:3000",
       points: {
-        sourcePath: "",
+        sourcePath: "/drone/points",
         sourceLayer: "custom_points_layer",
       },
       hexes: {
-        sourcePath: "",
+        sourcePath: "/drone/hexes",
         sourceLayer: "custom_hexes_layer",
       },
     },
