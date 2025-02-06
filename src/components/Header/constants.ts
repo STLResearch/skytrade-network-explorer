@@ -5,8 +5,8 @@ export const NAVIGATION_LINKS = [
     layoutSegments: ["drone"],
   },
   {
-    title: "Radar Concentration",
-    href: "/radar",
-    layoutSegments: ["radar"],
+    title: "Air Space",
+    href: "/air_space",
+    layoutSegments: ["air_space"],
   },
 ]

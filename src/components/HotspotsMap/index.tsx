@@ -4,7 +4,12 @@ import maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 import { Protocol } from "pmtiles"
 
-import { cellToLatLng, cellsToMultiPolygon, getResolution } from "h3-js"
+import {
+  cellToLatLng,
+  cellsToMultiPolygon,
+  getResolution,
+  latLngToCell,
+} from "h3-js"
 import { useTheme } from "next-themes"
 import {
   usePathname,
@@ -35,11 +40,12 @@ import {
   getHexOutlineStyle,
   networkLayers,
 } from "./utils"
+import { Feature, FeatureCollection, Geometry } from "geojson"
 
 import Sidebar from "../sidebar/index"
 import { st } from "../../styles/mapStyle"
-
-export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
+import Point from "./types"
+export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const { resolvedTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
@@ -52,6 +58,9 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
   const [showPopup, setShowPopup] = useState(false)
   const [selectedHexId, setSelectedHexId] = useState("")
   const [mapLoaded, setMapLoaded] = useState(false)
+
+  const [pointsData, setPointsData] = useState<FeatureCollection | null>(null)
+  const [hexesData, setHexesData] = useState<FeatureCollection | null>(null)
 
   useEffect(() => {
     let protocol = new Protocol()
@@ -161,8 +170,178 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
     setShowPopup(false)
   }, [])
 
-  // const mapStyleString = JSON.stringify(st)
-  // const mapStyleObject = JSON.parse(mapStyleString)
+  interface Bounds {
+    north: number
+    south: number
+    east: number
+    west: number
+  }
+
+  // interface Point {
+  //   longitude: number;
+  //   latitude: number;
+  // }
+
+  // interface GeoJSONFeature {
+  //   type: string;
+  //   geometry: {
+  //     type: string;
+  //     coordinates: number[];
+  //   };
+  //   properties: {
+  //     id: string;
+  //     name: string;
+  //   };
+  // }
+  type GeoJSONFeature = Feature<Geometry, { id: string; name: string }>
+  interface HexFeature {
+    type: string
+    geometry: {
+      type: string
+      coordinates: number[][][]
+    }
+    properties: {
+      id: string
+      name: string
+    }
+  }
+  let lastBounds: Bounds
+
+  const calculateIntersectionArea = (prev: Bounds, curr: Bounds) => {
+    const xOverlap = Math.max(
+      0,
+      Math.min(prev.east, curr.east) - Math.max(prev.west, curr.west)
+    )
+    const yOverlap = Math.max(
+      0,
+      Math.min(prev.north, curr.north) - Math.max(prev.south, curr.south)
+    )
+    return xOverlap * yOverlap
+  }
+
+  const calculateArea = (bounds: Bounds) => {
+    return (bounds.east - bounds.west) * (bounds.north - bounds.south)
+  }
+  const isOutOfTwoBounds = (prev: Bounds, curr: Bounds) => {
+    let count = 0
+
+    if (curr.north > prev.north || curr.north < prev.south) count++
+    if (curr.south < prev.south || curr.south > prev.north) count++
+    if (curr.east > prev.east || curr.east < prev.west) count++
+    if (curr.west < prev.west || curr.west > prev.east) count++
+
+    return count >= 2
+  }
+
+  const shouldFetch = (newBounds: Bounds, oldBounds: Bounds) => {
+    if (!oldBounds) return true
+
+    const oldArea = calculateArea(oldBounds)
+    const intersectionArea = calculateIntersectionArea(oldBounds, newBounds)
+    const hasTwoBoundsOutside = isOutOfTwoBounds(oldBounds, newBounds)
+    return intersectionArea <= oldArea / 2 && hasTwoBoundsOutside
+  }
+
+  const fetchPointsData = useCallback(async (bounds: Bounds) => {
+    console.log("try fetching points")
+    console.log(bounds)
+    if (bounds.north - bounds.south > 24 || !shouldFetch(bounds, lastBounds)) {
+      return
+    }
+    lastBounds = bounds
+    try {
+      console.log("fetching")
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/${
+          tab === "drone" ? "droneRadar" : "properties"
+        }/?maxLatitude=${bounds.north}&minLatitude=${
+          bounds.south
+        }&maxLongitude=${bounds.east}&minLongitude=${bounds.west}`
+      )
+      console.log(response)
+      const data: Point[] = await response.json()
+      console.log(data)
+      // return
+      // Convert data to GeoJSON format
+      const pointsGeoJSON: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: data.map(
+          (point: Point, index: number): GeoJSONFeature => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [point.longitude, point.latitude],
+            },
+            properties: {
+              id: point.id.toString(),
+              name: point.title,
+            },
+          })
+        ),
+      }
+
+      const hexesGeoJSON: FeatureCollection = {
+        type: "FeatureCollection",
+        features: data.map((point: any, index: number) => {
+          // const hexagonIndex = latLngToCell(point.latitude, point.longitude, RESOLUTION);
+          // const hexagonBoundary = cellsToMultiPolygon([hexagonIndex], true);
+          // console.log(hexagonBoundary)
+          // get all the points in of vertex in map
+          const coordinates = point.vertexes?.map((vertex: any) => [
+            vertex.longitude,
+            vertex.latitude,
+          ])
+          console.log(coordinates)
+          // if (coordinates.length > 0 && coordinates[0] !== coordinates[coordinates.length - 1]) {
+          //   coordinates.push(coordinates[0]);
+          // }
+          return {
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: [coordinates],
+            },
+            properties: {
+              id: point.id,
+              name: point.title,
+            },
+          }
+        }),
+      }
+
+      setPointsData(pointsGeoJSON)
+      setHexesData(hexesGeoJSON)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    }
+  }, [])
+
+  const debounce = (func: any, delay = 300) => {
+    let timeout: any
+    return (...args: any) => {
+      if (timeout) clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        func(...args)
+      }, delay)
+    }
+  }
+
+  const handleMapMoveEnd = useCallback(
+    debounce(() => {
+      if (mapRef.current) {
+        const map = mapRef.current.getMap()
+        const bounds = map.getBounds()
+        const boundsData = {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        }
+        fetchPointsData(boundsData)
+      }
+    }, 300),
+    [fetchPointsData]
+  )
   return (
     <Map
       initialViewState={INITIAL_MAP_VIEW_STATE}
@@ -175,6 +354,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
       mapLib={maplibregl}
       interactiveLayerIds={["hexes_layer"]}
       onLoad={selectHexByPathname}
+      onMoveEnd={handleMapMoveEnd}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -189,11 +369,17 @@ export function HotspotsMap({ tab }: { tab: "drone" | "radar" }) {
         <NetworkCoverageLayer layer={networkLayers.iot} />
       )} */}
       {currentTab === "drone" && (
-        <NetworkCoverageLayer layer={networkLayers.customDrone} />
+        <NetworkCoverageLayer
+          layer={networkLayers.customDrone}
+          data={{ hexesData, pointsData }}
+        />
       )}
       {/* <NetworkCoverageLayer layer={networkLayers.custom} /> */}
-      {currentTab === "radar" && (
-        <NetworkCoverageLayer layer={networkLayers.custom} />
+      {currentTab === "air_space" && (
+        <NetworkCoverageLayer
+          layer={networkLayers.custom}
+          data={{ hexesData, pointsData }}
+        />
       )}
 
       {selectedHex && (

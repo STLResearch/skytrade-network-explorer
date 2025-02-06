@@ -7,7 +7,7 @@ import { HexHotSpotItem } from "./HexHotspotItem"
 
 export type Hotspot = {
   address: string
-  name: string
+  title: string
   status: number
   statusString: "active" | "inactive"
   capabilities: {
@@ -57,7 +57,7 @@ export function HexHotspots({ hexId }: { hexId: string }) {
   const hotspots: Hotspot[] = [
     {
       address: "112tAUfmQ5orU7A1mVWQ3PPQXwwi5GEReMkKgMo5LKXxHgqpoAdt",
-      name: "Air space",
+      title: "Air space",
       status: 0,
       statusString: "active",
       capabilities: {

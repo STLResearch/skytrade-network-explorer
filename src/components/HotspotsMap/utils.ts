@@ -4,7 +4,7 @@ import { HeliumIotIcon } from "../icons/HeliumIotIcon"
 import { HeliumMobileIcon } from "../icons/HeliumMobileIcon"
 
 export const MIN_MAP_ZOOM = 2
-export const MAX_MAP_ZOOM = 10
+export const MAX_MAP_ZOOM = 18
 
 const WORLD_BOUNDS: [CoordPair, CoordPair] = [
   [-134.827109, 57.785781],
@@ -23,9 +23,9 @@ export const MAP_CONTAINER_STYLE: React.CSSProperties = {
   backgroundColor: "rgb(20, 20, 20)",
 }
 
-export const MIN_HEXES_ZOOM = 5
+export const MIN_HEXES_ZOOM = 1
 export const MIN_HEX_LABELS_ZOOM = 11
-export const POINTS_AND_HEXES_OVERLAP = 2
+export const POINTS_AND_HEXES_OVERLAP = 20
 
 export const HELIUM_IOT_COLOR = "#27EE76"
 export const HELIUM_MOBILE_COLOR = "#009FF9"
@@ -229,9 +229,9 @@ export const getBlurredPointStyle = (color: string): mapboxgl.CirclePaint => ({
     ["exponential", 2],
     ["zoom"],
     MIN_MAP_ZOOM,
-    0.05,
+    0.5,
     MIN_HEXES_ZOOM + POINTS_AND_HEXES_OVERLAP,
-    0.4,
+    1,
   ],
   "circle-radius": [
     "interpolate",

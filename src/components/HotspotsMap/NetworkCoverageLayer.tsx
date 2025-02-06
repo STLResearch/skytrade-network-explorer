@@ -104,14 +104,18 @@ const pointsDataTyped = validateFeatureCollection(pointsData)
 
 export function NetworkCoverageLayer({
   layer: { color, sourceDomain, points, hexes },
+  data: { hexesData, pointsData },
   ...props
 }: {
   layer: NetworkCoverageLayerOption
+  data: { hexesData: FeatureCollection; pointsData: FeatureCollection }
 }) {
   const { resolvedTheme } = useTheme()
+  console.log(hexesData)
+  console.log(pointsData)
   return (
     <Fragment {...props}>
-      <Source id="points_source" type="geojson" data={pointsDataTyped}>
+      <Source id="points_source" type="geojson" data={pointsData}>
         <Layer
           id="points_layer"
           type="circle"
@@ -128,13 +132,13 @@ export function NetworkCoverageLayer({
           paint={getHexLabelStyle(resolvedTheme)}
         /> */}
       </Source>
-      <Source id="hexes_source" type="geojson" data={hexesDataTyped}>
+      <Source id="hexes_source" type="geojson" data={hexesData}>
         <Layer
           id="hexes_layer"
           type="fill"
           // source-layer="custom_hexes_layer"
           paint={getHexFillStyle(color)}
-          minzoom={MIN_HEXES_ZOOM}
+          // minzoom={MIN_HEXES_ZOOM}
         />
       </Source>
     </Fragment>

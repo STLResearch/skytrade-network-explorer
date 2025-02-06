@@ -13,7 +13,6 @@ type HexHotSpotItemProps = {
 
 export const HexHotSpotItem = ({ hotspot }: HexHotSpotItemProps) => {
   // const { provider } = usePreferences()
-  console.log("hheheshf")
   const { cbrs, wifi, mobile } = hotspot.capabilities
   const isMobile = cbrs || wifi || mobile
   const Avatar = isMobile ? HeliumMobileIcon : HeliumIotIcon
@@ -32,7 +31,7 @@ export const HexHotSpotItem = ({ hotspot }: HexHotSpotItemProps) => {
             <Avatar className="inline-block h-8 w-8 flex-shrink-0" />
             <div className="truncate">
               <p className="truncate text-sm font-medium leading-5 text-gray-900 dark:text-zinc-100">
-                {hotspot.name}
+                {hotspot.title}
               </p>
               <p className="truncate text-xs text-gray-600 dark:text-zinc-300">
                 {subtitle}

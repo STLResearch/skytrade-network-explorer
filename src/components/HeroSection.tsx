@@ -36,7 +36,7 @@ export default function HeroSection() {
             </svg>
           </Link>
           <Link
-            href="/radar"
+            href="/air_space"
             className="inline-flex items-center rounded-lg bg-[#0A2156] px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-[#0c2869]"
           >
             <svg
@@ -53,7 +53,7 @@ export default function HeroSection() {
                 strokeLinejoin="round"
               />
             </svg>
-            Radar Explorer
+            Air Space Explorer
             <svg
               className="ml-2 h-5 w-5"
               fill="none"
