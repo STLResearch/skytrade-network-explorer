@@ -59,8 +59,8 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const [selectedHexId, setSelectedHexId] = useState("")
   const [mapLoaded, setMapLoaded] = useState(false)
 
-  const [pointsData, setPointsData] = useState<FeatureCollection | null>(null)
-  const [hexesData, setHexesData] = useState<FeatureCollection | null>(null)
+  const [pointsData, setPointsData] = useState<FeatureCollection>()
+  const [hexesData, setHexesData] = useState<FeatureCollection>()
 
   useEffect(() => {
     let protocol = new Protocol()

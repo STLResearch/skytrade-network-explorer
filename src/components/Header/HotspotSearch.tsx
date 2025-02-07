@@ -180,9 +180,7 @@ export function HotspotSearch() {
                                         className="h-6 w-6 flex-none"
                                         aria-hidden="true"
                                       />
-                                      <span className="ml-3 flex-auto truncate capitalize">
-                                        {hotspot.name.replaceAll("-", " ")}
-                                      </span>
+                                      <span className="ml-3 flex-auto truncate capitalize"></span>
                                       {active && (
                                         <span className="ml-3 flex-none text-gray-500 dark:text-gray-400">
                                           Go to Hotspot
