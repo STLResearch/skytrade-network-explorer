@@ -396,7 +396,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
         const endpoint = tab === "drone" ? "droneRadar" : "properties"
 
         const response = await fetch(
-          `/api/${endpoint}/?maxLatitude=${bounds.north}&minLatitude=${bounds.south}&maxLongitude=${bounds.east}&minLongitude=${bounds.west}`
+          `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/${endpoint}/?maxLatitude=${bounds.north}&minLatitude=${bounds.south}&maxLongitude=${bounds.east}&minLongitude=${bounds.west}`
         )
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
