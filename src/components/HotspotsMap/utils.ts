@@ -1,6 +1,4 @@
-import { CoordPair, cellsToMultiPolygon } from "h3-js"
-import * as h3 from "h3-js"
-import { HeliumIotIcon } from "../icons/HeliumIotIcon"
+import { CoordPair } from "h3-js"
 import { HeliumMobileIcon } from "../icons/HeliumMobileIcon"
 
 export const MIN_MAP_ZOOM = 2
@@ -12,7 +10,9 @@ const WORLD_BOUNDS: [CoordPair, CoordPair] = [
 ]
 
 export const INITIAL_MAP_VIEW_STATE = {
-  bounds: WORLD_BOUNDS,
+  latitude: 39.5,
+  longitude: -98.35,
+  zoom: 4,
 }
 
 export const MAP_CONTAINER_STYLE: React.CSSProperties = {
@@ -30,55 +30,9 @@ export const POINTS_AND_HEXES_OVERLAP = 20
 export const HELIUM_IOT_COLOR = "#27EE76"
 export const HELIUM_MOBILE_COLOR = "#009FF9"
 
+export const HEX_RESOLUTION = 4
+
 const h3Indexes = ["89283082813ffff", "8928308281bffff"]
-// this is for testing actual data will come from api remove this once api set
-// Sample data structure for custom points
-// console.log(h3.cellToLatLng(h3Indexes[0]))
-// export const samplePointsData = {
-//   type: "FeatureCollection",
-//   features: [
-//     {
-//       type: "Feature",
-//       geometry: {
-//         type: "Point",
-//         coordinates: h3.cellToLatLng(h3Indexes[0])
-//       },
-//       properties: {
-//         id: "sample-point-1",
-//         name: "Sample Point 1"
-//       }
-//     },
-//     {
-//       type: "Feature",
-//       geometry: {
-//         type: "Point",
-//         coordinates: h3.cellToLatLng(h3Indexes[1])
-//       },
-//       properties: {
-//         id: "sample-point-2",
-//         name: "Sample Point 2"
-//       }
-//     }
-//   ]
-// };
-
-// // Sample data structure for custom hexes
-
-// export const sampleHexesData = {
-//   type: "FeatureCollection",
-//   features: [
-//     {
-//       type: "Feature",
-//       geometry: {
-//         type: "MultiPolygon",
-//         coordinates: cellsToMultiPolygon(h3Indexes, true)
-//       },
-//       properties: {
-
-//       }
-//     }
-//   ]
-// };
 
 export const samplePointsData = {
   type: "FeatureCollection",
@@ -116,32 +70,9 @@ export const samplePointsData = {
         name: "Sample Point 3",
       },
     },
-    // {
-    //   type: "Feature",
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [77.1025, 28.7041] // Delhi
-    //   },
-    //   properties: {
-    //     id: "point4",
-    //     name: "Sample Point 4"
-    //   }
-    // },
-    // {
-    //   type: "Feature",
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [88.3639, 22.5726] // Kolkata
-    //   },
-    //   properties: {
-    //     id: "point5",
-    //     name: "Sample Point 5"
-    //   }
-    // }
   ],
 }
 
-// Sample data structure for custom hexes
 export const sampleHexesData = {
   type: "FeatureCollection",
   features: [
@@ -295,34 +226,6 @@ export interface NetworkCoverageLayerOption {
 
 export const networkLayers: { [network: string]: NetworkCoverageLayerOption } =
   {
-    mobile: {
-      name: "MOBILE",
-      icon: HeliumMobileIcon,
-      color: HELIUM_MOBILE_COLOR,
-      sourceDomain: process.env.NEXT_PUBLIC_HOTSPOTTY_TILESERVER_URL!,
-      points: {
-        sourcePath: "public.helium_mobile_points.json",
-        sourceLayer: "public.helium_mobile_points",
-      },
-      hexes: {
-        sourcePath: "public.helium_mobile_hexes.json",
-        sourceLayer: "public.helium_mobile_hexes",
-      },
-    },
-    iot: {
-      name: "IOT",
-      icon: HeliumIotIcon,
-      color: HELIUM_IOT_COLOR,
-      sourceDomain: process.env.NEXT_PUBLIC_HELIUMGEEK_TILESERVER_URL!,
-      points: {
-        sourcePath: "hg.gateways-rewarded-r8.points.json",
-        sourceLayer: "hg.gateways-rewarded-r8.points",
-      },
-      hexes: {
-        sourcePath: "hg.gateways-rewarded-r8.hexes.json",
-        sourceLayer: "hg.gateways-rewarded-r8.hexes",
-      },
-    },
     custom: {
       name: "CUSTOM",
       icon: HeliumMobileIcon,

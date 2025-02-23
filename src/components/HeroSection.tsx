@@ -1,11 +1,10 @@
 import Link from "next/link"
-// import Video from "../Video";
 
 export default function HeroSection() {
   return (
     <section className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden px-4 py-20">
       <div className="relative z-10 mx-auto max-w-4xl space-y-6 text-center">
-        <h1 className="text-5xl font-bold leading-tight text-[#0A2156] md:text-6xl lg:text-7xl">
+        <h1 className="text-5xl font-bold leading-tight text-[#7e9ce2] md:text-6xl lg:text-7xl">
           SkyTrade
           <br />
           Explorer

@@ -1,6 +1,6 @@
 {
-  "short_name": "Helium Explorer",
-  "name": "Helium Explorer is an open source block explorer providing detailed blockchain data from the Helium network",
+  "short_name": "Skytrade Network Explorer",
+  "name": "Skytrade Network Explorer is an explorer to render drone and air rights concentration data",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,12 +8,12 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "app-logo-dark.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "app-logo-dark.png",
       "type": "image/png",
       "sizes": "512x512"
     }

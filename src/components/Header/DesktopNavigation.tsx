@@ -15,9 +15,6 @@ function NavItem({
   children: React.ReactNode
 }) {
   const selectedLayoutSegment = useSelectedLayoutSegment()
-  console.log(selectedLayoutSegment)
-  console.log(layoutSegments)
-  console.log(href)
   const isActive = layoutSegments.includes(selectedLayoutSegment)
 
   return (

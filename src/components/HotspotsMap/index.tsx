@@ -18,7 +18,7 @@ import {
   useSelectedLayoutSegments,
 } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Map, {
+import ReactMap, {
   Layer,
   MapLayerMouseEvent,
   MapRef,
@@ -28,9 +28,9 @@ import Map, {
 } from "react-map-gl"
 import { gaEvent } from "../GATracker"
 import { NetworkCoverageLayer } from "./NetworkCoverageLayer"
-import { mapLayersDark } from "./mapLayersDark"
-import { mapLayersLight } from "./mapLayersLight"
+
 import {
+  HEX_RESOLUTION,
   HexFeatureDetails,
   INITIAL_MAP_VIEW_STATE,
   MAP_CONTAINER_STYLE,
@@ -40,11 +40,96 @@ import {
   getHexOutlineStyle,
   networkLayers,
 } from "./utils"
-import { Feature, FeatureCollection, Geometry } from "geojson"
+import {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+} from "geojson"
 
 import Sidebar from "../sidebar/index"
 import { st } from "../../styles/mapStyle"
 import Point from "./types"
+import { LoadingIcon } from "../icons/LoadingIcon"
+
+const pointToHexFeature = (point: Point): GeoJSON.Feature => {
+  const hexId = latLngToCell(point.latitude, point.longitude, HEX_RESOLUTION)
+  const hexPolygons = cellsToMultiPolygon([hexId], true)
+  return {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: hexPolygons[0],
+    },
+    properties: {
+      id: point.id,
+      name: point.title,
+    },
+  }
+}
+
+const convertPointsToHexFeatures = (
+  points: Point[]
+): FeatureCollection<Geometry, GeoJsonProperties> => ({
+  type: "FeatureCollection",
+  features: points.map(pointToHexFeature),
+})
+
+function extractPriceAndRentableAirspace(
+  data: Point[]
+): { price: number; isRentableAirspace: boolean }[] {
+  return data.map(({ price, isRentableAirspace }) => ({
+    price,
+    isRentableAirspace,
+  }))
+}
+
+const aggregatePointsToHexFeatures = (points: Point[]): FeatureCollection => {
+  // Provide explicit type parameters to Map.
+  const hexMap = new Map() as Map<
+    string,
+    { hexCoords: number[][][]; count: number }
+  >
+
+  points.forEach((point: Point) => {
+    const hexId: string = latLngToCell(
+      point.latitude,
+      point.longitude,
+      HEX_RESOLUTION
+    )
+    if (hexMap.has(hexId)) {
+      const entry = hexMap.get(hexId)!
+      entry.count++
+    } else {
+      // cellsToMultiPolygon returns a CoordPair[][][]; we cast it to number[][][].
+      const hexPolygons = cellsToMultiPolygon(
+        [hexId],
+        true
+      ) as unknown as number[][][]
+      // Use the first polygon from the array.
+      hexMap.set(hexId, { hexCoords: [hexPolygons[0]], count: 1 })
+    }
+  })
+
+  // Build the features array with explicit type annotation.
+  const features: Feature[] = []
+  hexMap.forEach((entry, hexId) => {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: entry.hexCoords,
+      },
+      properties: {
+        hexId,
+        count: entry.count,
+      },
+    })
+  })
+
+  return { type: "FeatureCollection", features }
+}
+
 export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const { resolvedTheme } = useTheme()
   const router = useRouter()
@@ -52,15 +137,106 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const segments = useSelectedLayoutSegments()
   const segment = useSelectedLayoutSegment()
   const mapRef = useRef<MapRef>(null)
+  const [loading, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
   const [selectedHex, setSelectedHex] = useState<HexFeatureDetails | null>(null)
+
+  const [propertyName, setPropertyName] = useState("")
   const [cursor, setCursor] = useState("")
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null)
   const [currentTab, setCurrentTab] = useState(tab)
   const [showPopup, setShowPopup] = useState(false)
-  const [selectedHexId, setSelectedHexId] = useState("")
-  const [mapLoaded, setMapLoaded] = useState(false)
 
-  const [pointsData, setPointsData] = useState<FeatureCollection>()
+  const [selectedHexId, setSelectedHexId] = useState("")
+
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const [hexData, setHexData] = useState([
+    { price: 0.00001, isRentableAirspace: false },
+  ])
+
+  const [selectedPrice, setSelectedPrice] = useState<number | undefined>(
+    undefined
+  )
+
+  const emptyGeoJSON: FeatureCollection<Geometry, GeoJsonProperties> = {
+    type: "FeatureCollection",
+    features: [],
+  }
+
+  const [pointsData, setPointsData] = useState<FeatureCollection>(emptyGeoJSON)
   const [hexesData, setHexesData] = useState<FeatureCollection>()
+
+  // Define cluster layers dynamically based on the `tab` prop
+
+  const clusterCircleLayer = useMemo(
+    () => ({
+      id: "cluster-circle",
+      type: "circle",
+      source: "points",
+      filter: ["has", "point_count"],
+      paint: {
+        "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+        "circle-color":
+          tab === "drone"
+            ? [
+                "step",
+                ["get", "point_count"],
+                "#B0E6F1",
+                100,
+                "#71BBD4",
+                750,
+                "#478E9B",
+              ]
+            : [
+                "step",
+                ["get", "point_count"],
+                "#F1B0B0",
+                100,
+                "#D47171",
+                750,
+                "#9B4747",
+              ],
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#fff",
+      },
+    }),
+    [tab]
+  )
+
+  const clusterCountLayer = useMemo(
+    () => ({
+      id: "cluster-count",
+      type: "symbol",
+      source: "points",
+      filter: ["has", "point_count"],
+      layout: {
+        "text-field": "{point_count}",
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "text-size": 12,
+      },
+      paint: {
+        "text-color": tab === "drone" ? "#000" : "#fff",
+      },
+    }),
+    [tab]
+  )
+
+  const unclusteredPointLayer = useMemo(
+    () => ({
+      id: "unclustered-point",
+      type: "circle",
+      source: "points",
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-radius": 5,
+        "circle-color": tab === "drone" ? "#11b4da" : "#da7111",
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#fff",
+      },
+    }),
+    [tab]
+  )
 
   useEffect(() => {
     let protocol = new Protocol()
@@ -69,105 +245,15 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
       maplibregl.removeProtocol("basemaps")
     }
   }, [])
-  console.log("map rendering")
-
-  const mapStyle = useMemo(() => {
-    const style: MapStyle = {
-      version: 8,
-      sources: {
-        carto: {
-          type: "vector",
-          url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json",
-        },
-      },
-      glyphs: "https://cdn.protomaps.com/fonts/pbf/{fontstack}/{range}.pbf",
-      sprite:
-        "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/sprite",
-      layers: mapLayersDark,
-    }
-    return style
-  }, [resolvedTheme])
 
   const newMapStyle = useMemo(() => {
     const mapStyleString = JSON.stringify(st)
     const mapStyleObject = JSON.parse(mapStyleString)
     return mapStyleObject
-  }, [resolvedTheme])
-  const selectHex = useCallback((hexId: string | null) => {
-    if (!hexId) {
-      setSelectedHex(null)
-      return
-    }
-
-    const selectedHex = {
-      hexId,
-      geojson: {
-        type: "MultiPolygon",
-        coordinates: cellsToMultiPolygon([hexId], true),
-      } as GeoJSON.Geometry,
-    }
-
-    setSelectedHex(selectedHex)
-
-    if (!mapRef.current) return
-    const map = mapRef.current.getMap()
-    const [lat, lng] = cellToLatLng(hexId)
-    const bounds = map.getBounds()
-    const zoom = map.getZoom()
-    const hexResolution = getResolution(hexId)
-    const newZoom = ZOOM_BY_HEX_RESOLUTION[hexResolution]
-    if (zoom < newZoom - 3 || !bounds.contains([lng, lat])) {
-      // Fly to the hex if it's not visible in the current viewport, or if it's not zoomed in enough
-      // TODO uncomment this after
-      // map.flyTo({ center: [lng, lat], zoom: newZoom })
-    }
   }, [])
-
-  const selectHexByPathname = useCallback(() => {
-    if (!mapRef.current) return
-    console.log(mapRef)
-    if (segments.length === 2 && segments[0] === "hex") {
-      const hexId = segments[1]
-      if (selectedHex?.hexId !== hexId) {
-        selectHex(hexId)
-      }
-    } else if (pathname === "/" && selectedHex?.hexId) {
-      selectHex(null)
-    }
-  }, [pathname, segments, selectHex, selectedHex?.hexId])
-
-  useEffect(() => {
-    setMapLoaded(true)
-    selectHexByPathname()
-  }, [selectHexByPathname])
-
-  const onClick = useCallback(
-    (event: MapLayerMouseEvent) => {
-      event.features?.forEach(({ layer, properties }) => {
-        if (layer.id !== "hexes_layer" || !properties?.id) return
-        // if (selectedHex?.hexId === properties.id) {
-        //   // router.push("/radar")
-        // } else {
-        //   // router.push(`/radar/hex/8c3dac39da5c5ff`)
-        // }
-        setSelectedHexId(properties.id)
-        console.log("clicked " + properties.id)
-        setShowPopup(!showPopup)
-      })
-    },
-    [router, selectedHex?.hexId]
-  )
 
   useEffect(() => {
     gaEvent({ action: "map_load" })
-  }, [])
-
-  const onMouseEnter = useCallback(() => setCursor("pointer"), [])
-  const onMouseLeave = useCallback(() => setCursor(""), [])
-
-  const handleClose = useCallback(() => {
-    console.log("close")
-    setShowPopup(false)
   }, [])
 
   interface Bounds {
@@ -177,22 +263,6 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
     west: number
   }
 
-  // interface Point {
-  //   longitude: number;
-  //   latitude: number;
-  // }
-
-  // interface GeoJSONFeature {
-  //   type: string;
-  //   geometry: {
-  //     type: string;
-  //     coordinates: number[];
-  //   };
-  //   properties: {
-  //     id: string;
-  //     name: string;
-  //   };
-  // }
   type GeoJSONFeature = Feature<Geometry, { id: string; name: string }>
   interface HexFeature {
     type: string
@@ -205,116 +275,152 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
       name: string
     }
   }
-  let lastBounds: Bounds
 
-  const calculateIntersectionArea = (prev: Bounds, curr: Bounds) => {
-    const xOverlap = Math.max(
-      0,
-      Math.min(prev.east, curr.east) - Math.max(prev.west, curr.west)
-    )
-    const yOverlap = Math.max(
-      0,
-      Math.min(prev.north, curr.north) - Math.max(prev.south, curr.south)
-    )
-    return xOverlap * yOverlap
-  }
+  const lastBoundsRef = useRef<Bounds | null>(null)
 
-  const calculateArea = (bounds: Bounds) => {
-    return (bounds.east - bounds.west) * (bounds.north - bounds.south)
-  }
-  const isOutOfTwoBounds = (prev: Bounds, curr: Bounds) => {
-    let count = 0
-
-    if (curr.north > prev.north || curr.north < prev.south) count++
-    if (curr.south < prev.south || curr.south > prev.north) count++
-    if (curr.east > prev.east || curr.east < prev.west) count++
-    if (curr.west < prev.west || curr.west > prev.east) count++
-
-    return count >= 2
-  }
-
-  const shouldFetch = (newBounds: Bounds, oldBounds: Bounds) => {
+  const shouldFetch = useCallback((newBounds: Bounds, oldBounds: Bounds) => {
     if (!oldBounds) return true
+
+    const calculateIntersectionArea = (prev: Bounds, curr: Bounds) => {
+      const xOverlap = Math.max(
+        0,
+        Math.min(prev.east, curr.east) - Math.max(prev.west, curr.west)
+      )
+      const yOverlap = Math.max(
+        0,
+        Math.min(prev.north, curr.north) - Math.max(prev.south, curr.south)
+      )
+      return xOverlap * yOverlap
+    }
+
+    const calculateArea = (bounds: Bounds) => {
+      return (bounds.east - bounds.west) * (bounds.north - bounds.south)
+    }
+
+    const isOutOfTwoBounds = (prev: Bounds, curr: Bounds) => {
+      let count = 0
+
+      if (curr.north > prev.north || curr.north < prev.south) count++
+      if (curr.south < prev.south || curr.south > prev.north) count++
+      if (curr.east > prev.east || curr.east < prev.west) count++
+      if (curr.west < prev.west || curr.west > prev.east) count++
+
+      return count >= 2
+    }
 
     const oldArea = calculateArea(oldBounds)
     const intersectionArea = calculateIntersectionArea(oldBounds, newBounds)
     const hasTwoBoundsOutside = isOutOfTwoBounds(oldBounds, newBounds)
     return intersectionArea <= oldArea / 2 && hasTwoBoundsOutside
-  }
+  }, [])
 
-  const fetchPointsData = useCallback(async (bounds: Bounds) => {
-    console.log("try fetching points")
-    console.log(bounds)
-    if (bounds.north - bounds.south > 24 || !shouldFetch(bounds, lastBounds)) {
-      return
-    }
-    lastBounds = bounds
-    try {
-      console.log("fetching")
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/${
-          tab === "drone" ? "droneRadar" : "properties"
-        }/?maxLatitude=${bounds.north}&minLatitude=${
-          bounds.south
-        }&maxLongitude=${bounds.east}&minLongitude=${bounds.west}`
-      )
-      console.log(response)
-      const data: Point[] = await response.json()
-      console.log(data)
-      // return
-      // Convert data to GeoJSON format
-      const pointsGeoJSON: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: data.map(
-          (point: Point, index: number): GeoJSONFeature => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [point.longitude, point.latitude],
-            },
-            properties: {
-              id: point.id.toString(),
-              name: point.title,
-            },
-          })
-        ),
-      }
-
-      const hexesGeoJSON: FeatureCollection = {
-        type: "FeatureCollection",
-        features: data.map((point: any, index: number) => {
-          // const hexagonIndex = latLngToCell(point.latitude, point.longitude, RESOLUTION);
-          // const hexagonBoundary = cellsToMultiPolygon([hexagonIndex], true);
-          // console.log(hexagonBoundary)
-          // get all the points in of vertex in map
-          const coordinates = point.vertexes?.map((vertex: any) => [
-            vertex.longitude,
-            vertex.latitude,
-          ])
-          console.log(coordinates)
-          // if (coordinates.length > 0 && coordinates[0] !== coordinates[coordinates.length - 1]) {
-          //   coordinates.push(coordinates[0]);
-          // }
+  // Conversion function for drone data (from Device model)
+  const convertDroneDataToGeoJSON = (
+    data: any[]
+  ): GeoJSON.FeatureCollection => {
+    return {
+      type: "FeatureCollection",
+      features: data
+        .filter(
+          (device) =>
+            device.deviceLocationLat != null && device.deviceLocationLng != null
+        )
+        .map((device) => {
+          const coordinates = [
+            device.deviceLocationLng,
+            device.deviceLocationLat,
+          ]
+          // Try to extract a name from remoteData if possible.
+          let name = device.id // default: use the device id
+          if (device.remoteData && typeof device.remoteData === "object") {
+            // If remoteData has a 'name' property, use that.
+            const remote = device.remoteData as { name?: string }
+            if (remote.name) {
+              name = remote.name
+            }
+          }
           return {
             type: "Feature",
             geometry: {
-              type: "Polygon",
-              coordinates: [coordinates],
+              type: "Point",
+              coordinates,
             },
             properties: {
-              id: point.id,
-              name: point.title,
+              id: device.id,
+              name, // either the remoteData name or fallback to id
+              // ipAddress: device.ipAddress,
+              // Optionally include other properties
             },
           }
         }),
-      }
-
-      setPointsData(pointsGeoJSON)
-      setHexesData(hexesGeoJSON)
-    } catch (error) {
-      console.error("Error fetching data:", error)
     }
-  }, [])
+  }
+
+  const convertPropertyDataToGeoJSON = (
+    data: any[]
+  ): GeoJSON.FeatureCollection => {
+    return {
+      type: "FeatureCollection",
+      features: data
+        .filter((prop) => prop.latitude != null && prop.longitude != null)
+        .map((prop) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [prop.longitude, prop.latitude],
+          },
+          properties: {
+            id: prop.id ? prop.id.toString() : "",
+            name: prop.address || "Property",
+            price: prop.price,
+            isRentableAirspace: prop.isRentableAirspace,
+          },
+        })),
+    }
+  }
+
+  const fetchPointsData = useCallback(
+    async (bounds: Bounds) => {
+      if (
+        bounds.north - bounds.south > 30 ||
+        (lastBoundsRef.current !== null &&
+          !shouldFetch(bounds, lastBoundsRef.current))
+      ) {
+        return
+      }
+      lastBoundsRef.current = bounds
+      try {
+        setLoading(true)
+        setFetchError(null)
+
+        const endpoint = tab === "drone" ? "droneRadar" : "properties"
+
+        const response = await fetch(
+          `/api/${endpoint}/?maxLatitude=${bounds.north}&minLatitude=${bounds.south}&maxLongitude=${bounds.east}&minLongitude=${bounds.west}`
+        )
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data: Point[] = await response.json()
+
+        let pointsGeoJSON: GeoJSON.FeatureCollection
+        if (tab === "drone") {
+          pointsGeoJSON = convertDroneDataToGeoJSON(data)
+        } else {
+          pointsGeoJSON = convertPropertyDataToGeoJSON(data)
+        }
+
+        setPointsData(pointsGeoJSON)
+        // setHexesData(hexesGeoJSON)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+        setFetchError("Failed to load map data. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [tab, shouldFetch]
+  )
 
   const debounce = (func: any, delay = 300) => {
     let timeout: any
@@ -326,24 +432,75 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
     }
   }
 
-  const handleMapMoveEnd = useCallback(
-    debounce(() => {
-      if (mapRef.current) {
-        const map = mapRef.current.getMap()
-        const bounds = map.getBounds()
-        const boundsData = {
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-        }
+  const debouncedFetchPointsData = useMemo(
+    () =>
+      debounce((boundsData: Bounds) => {
         fetchPointsData(boundsData)
-      }
-    }, 300),
+      }, 300),
     [fetchPointsData]
   )
+
+  const handleMapMoveEnd = useCallback(() => {
+    if (mapRef.current) {
+      const map = mapRef.current.getMap()
+      const bounds = map.getBounds()
+      const boundsData = {
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      }
+      debouncedFetchPointsData(boundsData)
+    }
+  }, [debouncedFetchPointsData])
+
+  const onClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      const feature = event.features && event.features[0]
+      if (!feature) return
+
+      const isCluster = feature.properties?.cluster
+      if (isCluster) {
+        // If cluster, we can expand/zoom
+        const clusterId = feature.properties?.cluster_id
+        const mapboxSource = mapRef.current?.getMap().getSource("points") as any // 'points' is the Source id
+        if (mapboxSource && clusterId) {
+          mapboxSource.getClusterExpansionZoom(
+            clusterId,
+            (err: any, zoom: number) => {
+              if (err) {
+                return
+              }
+              mapRef.current?.flyTo({
+                center: event.lngLat,
+                zoom: zoom + 1,
+              })
+            }
+          )
+        }
+      } else {
+        // Single point clicked
+        const clickedId = feature.properties?.id
+        const clickedName = feature.properties?.name
+        const clickedPrice = feature.properties?.price ?? null
+        setSelectedPointId(clickedId)
+        setPropertyName(clickedName)
+        setSelectedPrice(clickedPrice)
+        setShowPopup(!showPopup)
+      }
+    },
+    [showPopup]
+  )
+
+  const onMouseEnter = useCallback(() => setCursor("pointer"), [])
+  const onMouseLeave = useCallback(() => setCursor(""), [])
+
+  const handleClose = useCallback(() => {
+    setShowPopup(false)
+  }, [])
+
   return (
-    <Map
+    <ReactMap
       initialViewState={INITIAL_MAP_VIEW_STATE}
       minZoom={MIN_MAP_ZOOM}
       maxZoom={MAX_MAP_ZOOM}
@@ -352,8 +509,24 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
       localFontFamily="NotoSans-Regular"
       // @ts-ignore
       mapLib={maplibregl}
-      interactiveLayerIds={["hexes_layer"]}
-      onLoad={selectHexByPathname}
+      onLoad={() => {
+        // Optionally fetch initial data or handle first load
+        if (mapRef.current) {
+          const map = mapRef.current.getMap()
+          const bounds = map.getBounds()
+          fetchPointsData({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+          })
+        }
+      }}
+      interactiveLayerIds={[
+        "cluster-circle",
+        "cluster-count",
+        "unclustered-point",
+      ]}
       onMoveEnd={handleMapMoveEnd}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -364,29 +537,75 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
     >
       <NavigationControl position="bottom-left" showCompass={false} />
 
-      {showPopup && <Sidebar hexId={selectedHexId} onClose={handleClose} />}
-      {/* {segment !== "mobile" && (
-        <NetworkCoverageLayer layer={networkLayers.iot} />
-      )} */}
-      {currentTab === "drone" && (
-        <NetworkCoverageLayer
-          layer={networkLayers.customDrone}
-          data={{ hexesData, pointsData }}
-        />
+      {loading && (
+        <div className="absolute left-1/2 top-1/2 z-[1000] -translate-x-1/2 -translate-y-1/2 transform">
+          <svg
+            className="h-16 w-16 animate-spin text-blue-500"
+            viewBox="0 0 50 50"
+            style={{ animationDuration: "1s" }}
+          >
+            <circle
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeDasharray="100"
+              strokeDashoffset="75"
+            />
+          </svg>
+        </div>
       )}
-      {/* <NetworkCoverageLayer layer={networkLayers.custom} /> */}
-      {currentTab === "air_space" && (
-        <NetworkCoverageLayer
-          layer={networkLayers.custom}
-          data={{ hexesData, pointsData }}
+
+      {fetchError && (
+        <div className="absolute left-1/2 top-1/4 z-[1000] -translate-x-1/2 transform rounded bg-red-600 px-4 py-3 text-center text-white">
+          <p>{fetchError}</p>
+          <button
+            className="mt-2 rounded bg-white px-4 py-2 text-red-600 hover:bg-gray-100"
+            onClick={() => {
+              if (mapRef.current) {
+                const map = mapRef.current.getMap()
+                const bounds = map.getBounds()
+                const boundsData = {
+                  north: bounds.getNorth(),
+                  south: bounds.getSouth(),
+                  east: bounds.getEast(),
+                  west: bounds.getWest(),
+                }
+                fetchPointsData(boundsData)
+              }
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {showPopup && (
+        <Sidebar
+          hexId={selectedPointId ?? ""}
+          price={selectedPrice}
+          propertyName={propertyName}
+          onClose={handleClose}
         />
       )}
 
-      {selectedHex && (
-        <Source type="geojson" data={selectedHex.geojson}>
-          <Layer type="line" paint={getHexOutlineStyle(resolvedTheme)} />
-        </Source>
-      )}
-    </Map>
+      <Source
+        id="points"
+        type="geojson"
+        data={pointsData}
+        cluster={true}
+        clusterMaxZoom={14} // Max zoom to cluster points on
+        clusterRadius={50} // Radius of each cluster when clustering points (pixels)
+      >
+        {/* Circle for cluster circles */}
+        <Layer {...(clusterCircleLayer as any)} />
+        {/* Symbol for cluster count */}
+        <Layer {...(clusterCountLayer as any)} />
+        {/* Circle for individual (unclustered) points */}
+        <Layer {...(unclusteredPointLayer as any)} />
+      </Source>
+    </ReactMap>
   )
 }

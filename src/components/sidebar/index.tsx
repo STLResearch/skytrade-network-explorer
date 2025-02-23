@@ -1,22 +1,28 @@
 import { HexHotspots } from "@/components/HotspotsMap/HexHotspots"
 import { LoadingHexHotspots } from "@/components/HotspotsMap/LoadingHexHotspots"
-import { HexIcon } from "@/components/icons/HexIcon"
 import { XMarkIcon } from "@heroicons/react/24/outline"
 import clsx from "clsx"
-import { isValidCell } from "h3-js"
-import Link from "next/link"
-import { redirect } from "next/navigation"
-import { Suspense } from "react"
+
+function formatHexId(hexId: string): string {
+  if (hexId.length <= 6) {
+    return hexId
+  }
+  const start = hexId.slice(0, 3)
+  const end = hexId.slice(-3)
+  return `${start}...${end}`
+}
 
 export default function Page({
   hexId,
+  propertyName,
+  price,
   onClose,
 }: {
   hexId: string
+  propertyName: string
+  price?: number
   onClose: () => void
 }) {
-  // if (!isValidCell(params.hexId)) redirect("/")
-
   return (
     <div
       className={clsx(
@@ -27,24 +33,14 @@ export default function Page({
       )}
     >
       <div className="flex w-full items-center gap-3 p-2">
-        <HexIcon
-          width={21}
-          height={24}
-          className="fill-zinc-500 dark:fill-white"
-        />
-        <div className="flex-1 text-xl text-zinc-600 dark:text-zinc-100">
-          {hexId}
+        <div className="flex-1 text-xl text-zinc-300 dark:text-zinc-100">
+          {formatHexId(hexId)}
         </div>
-        {/* <Link href="/">
-                    <XMarkIcon className="h-6 w-6 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 hover:dark:text-zinc-100" />
-                </Link> */}
         <button onClick={onClose}>
-          <XMarkIcon className="h-6 w-6 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 hover:dark:text-zinc-100" />
+          <XMarkIcon className="h-6 w-6 text-zinc-400 transition hover:text-zinc-700 dark:text-zinc-400 hover:dark:text-zinc-100" />
         </button>
       </div>
-      {/* <Suspense fallback={<LoadingHexHotspots count={3} />}> */}
-      <HexHotspots hexId={hexId} />
-      {/* </Suspense> */}
+      <HexHotspots hexId={hexId} propertyName={propertyName} price={price} />
     </div>
   )
 }

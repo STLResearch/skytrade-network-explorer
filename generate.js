@@ -71,5 +71,3 @@ fs.writeFileSync(
   JSON.stringify(pointsFeatureCollection, null, 2)
 )
 fs.writeFileSync("hexes.json", JSON.stringify(hexesFeatureCollection, null, 2))
-
-console.log("GeoJSON files have been created: points.geojson and hexes.geojson")

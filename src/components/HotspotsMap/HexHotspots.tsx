@@ -1,7 +1,5 @@
 "use client"
 
-// import { Tooltip } from "@/app/stats/components/Tooltip"
-// import { PreferencesProvider } from "@/context/usePreferences"
 import clsx from "clsx"
 import { HexHotSpotItem } from "./HexHotspotItem"
 
@@ -47,13 +45,17 @@ function getGroupedHotspots(hotspots: Hotspot[]) {
   return groupedHotspots
 }
 
-export function HexHotspots({ hexId }: { hexId: string }) {
-  // this is just for demo once we have real database we will fetch location detail with id
-  console.log("this is hexId")
-  console.log(hexId)
-  setTimeout(() => {
-    console.log("waiting")
-  }, 3000)
+export function HexHotspots({
+  hexId,
+  propertyName,
+  price,
+}: {
+  hexId: string
+  propertyName: string
+  price?: number
+}) {
+  setTimeout(() => {}, 3000)
+
   const hotspots: Hotspot[] = [
     {
       address: "112tAUfmQ5orU7A1mVWQ3PPQXwwi5GEReMkKgMo5LKXxHgqpoAdt",
@@ -76,7 +78,6 @@ export function HexHotspots({ hexId }: { hexId: string }) {
   const groupedList = getGroupedHotspots(hotspots)
 
   if (hotspots.length === 0) {
-    console.log("dwdw")
     return (
       <div className="mb-2 text-sm font-medium text-gray-900 dark:text-zinc-200">
         This hex contains no Hotspots.
@@ -99,27 +100,16 @@ export function HexHotspots({ hexId }: { hexId: string }) {
                 )}
               >
                 <div className="flex gap-2">
-                  <span className="capitalize">{group}</span>
-                  {/* <Tooltip
-                    id={group}
-                    description={TOOLTIP_DESCRIPTIONS[group]}
-                    width="tiny"
-                  /> */}
+                  <div className="font-bold">{propertyName}</div>
                 </div>
                 <span className="ml-2 text-xs font-normal">
-                  {groupedList[group].length} Hotspots
+                  {price != null && (
+                    <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                      Price: ${price}
+                    </div>
+                  )}
                 </span>
               </div>
-              {/* <PreferencesProvider> */}
-              <ul
-                role="list"
-                className="z-0 flex-1 divide-y divide-gray-200 overflow-y-auto dark:divide-white/10"
-              >
-                {groupedList[group].map((hotspot) => (
-                  <HexHotSpotItem key={hotspot.address} hotspot={hotspot} />
-                ))}
-              </ul>
-              {/* </PreferencesProvider> */}
             </div>
           )
         }

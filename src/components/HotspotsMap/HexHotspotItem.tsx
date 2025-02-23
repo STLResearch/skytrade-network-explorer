@@ -1,6 +1,5 @@
 "use client"
 
-// import { usePreferences } from "@/context/usePreferences"
 import Link from "next/link"
 import { gaEvent } from "../GATracker"
 import { HeliumIotIcon } from "../icons/HeliumIotIcon"
@@ -12,11 +11,9 @@ type HexHotSpotItemProps = {
 }
 
 export const HexHotSpotItem = ({ hotspot }: HexHotSpotItemProps) => {
-  // const { provider } = usePreferences()
   const { cbrs, wifi, mobile } = hotspot.capabilities
   const isMobile = cbrs || wifi || mobile
   const Avatar = isMobile ? HeliumMobileIcon : HeliumIotIcon
-  // const subtitle = isMobile ? `Mobile Hotspot` : "IoT Hotspot"
   const subtitle = "Air Space"
 
   return (
