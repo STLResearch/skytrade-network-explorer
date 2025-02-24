@@ -68,68 +68,6 @@ const pointToHexFeature = (point: Point): GeoJSON.Feature => {
   }
 }
 
-const convertPointsToHexFeatures = (
-  points: Point[]
-): FeatureCollection<Geometry, GeoJsonProperties> => ({
-  type: "FeatureCollection",
-  features: points.map(pointToHexFeature),
-})
-
-function extractPriceAndRentableAirspace(
-  data: Point[]
-): { price: number; isRentableAirspace: boolean }[] {
-  return data.map(({ price, isRentableAirspace }) => ({
-    price,
-    isRentableAirspace,
-  }))
-}
-
-const aggregatePointsToHexFeatures = (points: Point[]): FeatureCollection => {
-  // Provide explicit type parameters to Map.
-  const hexMap = new Map() as Map<
-    string,
-    { hexCoords: number[][][]; count: number }
-  >
-
-  points.forEach((point: Point) => {
-    const hexId: string = latLngToCell(
-      point.latitude,
-      point.longitude,
-      HEX_RESOLUTION
-    )
-    if (hexMap.has(hexId)) {
-      const entry = hexMap.get(hexId)!
-      entry.count++
-    } else {
-      // cellsToMultiPolygon returns a CoordPair[][][]; we cast it to number[][][].
-      const hexPolygons = cellsToMultiPolygon(
-        [hexId],
-        true
-      ) as unknown as number[][][]
-      // Use the first polygon from the array.
-      hexMap.set(hexId, { hexCoords: [hexPolygons[0]], count: 1 })
-    }
-  })
-
-  // Build the features array with explicit type annotation.
-  const features: Feature[] = []
-  hexMap.forEach((entry, hexId) => {
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "Polygon",
-        coordinates: entry.hexCoords,
-      },
-      properties: {
-        hexId,
-        count: entry.count,
-      },
-    })
-  })
-
-  return { type: "FeatureCollection", features }
-}
-
 export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const { resolvedTheme } = useTheme()
   const router = useRouter()
@@ -147,13 +85,6 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null)
   const [currentTab, setCurrentTab] = useState(tab)
   const [showPopup, setShowPopup] = useState(false)
-
-  const [selectedHexId, setSelectedHexId] = useState("")
-
-  const [mapLoaded, setMapLoaded] = useState(false)
-  const [hexData, setHexData] = useState([
-    { price: 0.00001, isRentableAirspace: false },
-  ])
 
   const [selectedPrice, setSelectedPrice] = useState<number | undefined>(
     undefined
@@ -411,7 +342,6 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
         }
 
         setPointsData(pointsGeoJSON)
-        // setHexesData(hexesGeoJSON)
       } catch (error) {
         console.error("Error fetching data:", error)
         setFetchError("Failed to load map data. Please try again.")
@@ -461,9 +391,8 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
 
       const isCluster = feature.properties?.cluster
       if (isCluster) {
-        // If cluster, we can expand/zoom
         const clusterId = feature.properties?.cluster_id
-        const mapboxSource = mapRef.current?.getMap().getSource("points") as any // 'points' is the Source id
+        const mapboxSource = mapRef.current?.getMap().getSource("points") as any
         if (mapboxSource && clusterId) {
           mapboxSource.getClusterExpansionZoom(
             clusterId,
@@ -479,7 +408,6 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
           )
         }
       } else {
-        // Single point clicked
         const clickedId = feature.properties?.id
         const clickedName = feature.properties?.name
         const clickedPrice = feature.properties?.price ?? null
@@ -510,7 +438,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
       // @ts-ignore
       mapLib={maplibregl}
       onLoad={() => {
-        // Optionally fetch initial data or handle first load
+        // fetch initial data or handle first load
         if (mapRef.current) {
           const map = mapRef.current.getMap()
           const bounds = map.getBounds()
@@ -596,14 +524,11 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
         type="geojson"
         data={pointsData}
         cluster={true}
-        clusterMaxZoom={14} // Max zoom to cluster points on
-        clusterRadius={50} // Radius of each cluster when clustering points (pixels)
+        clusterMaxZoom={14}
+        clusterRadius={50}
       >
-        {/* Circle for cluster circles */}
         <Layer {...(clusterCircleLayer as any)} />
-        {/* Symbol for cluster count */}
         <Layer {...(clusterCountLayer as any)} />
-        {/* Circle for individual (unclustered) points */}
         <Layer {...(unclusteredPointLayer as any)} />
       </Source>
     </ReactMap>
