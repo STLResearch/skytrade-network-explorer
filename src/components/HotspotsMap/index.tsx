@@ -261,15 +261,6 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
             device.deviceLocationLng,
             device.deviceLocationLat,
           ]
-          // Try to extract a name from remoteData if possible.
-          let name = device.id // default: use the device id
-          if (device.remoteData && typeof device.remoteData === "object") {
-            // If remoteData has a 'name' property, use that.
-            const remote = device.remoteData as { name?: string }
-            if (remote.name) {
-              name = remote.name
-            }
-          }
           return {
             type: "Feature",
             geometry: {
@@ -278,7 +269,7 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
             },
             properties: {
               id: device.id,
-              name, // either the remoteData name or fallback to id
+              name: device.userId, // either the remoteData name or fallback to id
               // ipAddress: device.ipAddress,
               // Optionally include other properties
             },
@@ -341,7 +332,23 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
           pointsGeoJSON = convertPropertyDataToGeoJSON(data)
         }
 
-        setPointsData(pointsGeoJSON)
+        // setPointsData(pointsGeoJSON)
+
+        setPointsData((prevPointsData) => {
+          const newPoints = pointsGeoJSON.features.filter((newPoint) => {
+            // Check if the point is already in the existing state
+            return !prevPointsData.features.some(
+              (existingPoint) =>
+                existingPoint.properties?.id === newPoint.properties?.id
+            )
+          })
+
+          // Add only new points (avoid duplicates)
+          return {
+            ...prevPointsData,
+            features: [...prevPointsData.features, ...newPoints],
+          }
+        })
       } catch (error) {
         console.error("Error fetching data:", error)
         setFetchError("Failed to load map data. Please try again.")
@@ -426,6 +433,18 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
   const handleClose = useCallback(() => {
     setShowPopup(false)
   }, [])
+
+  useEffect(() => {
+    // Define default bounds for USA
+    const usaBounds = {
+      north: 49.384358,
+      south: 24.396308,
+      east: -66.93457,
+      west: -125.0,
+    }
+
+    fetchPointsData(usaBounds) // Initial fetch for the USA area
+  }, [fetchPointsData]) // Run once on initial render
 
   return (
     <ReactMap
