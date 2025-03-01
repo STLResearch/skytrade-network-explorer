@@ -1,7 +1,6 @@
 import { GAScript } from "@/components/GAScript"
 import { GATracker } from "@/components/GATracker"
 import { Header } from "@/components/Header"
-import { HotspotsMap } from "@/components/HotspotsMap"
 import { Providers } from "@/components/Providers"
 import "@/styles/tailwind.css"
 import "focus-visible"
@@ -10,7 +9,7 @@ import { Suspense } from "react"
 import "react-tooltip/dist/react-tooltip.css"
 
 export const metadata = {
-  metadataBase: new URL("https://yourdomain.com"),
+  metadataBase: new URL("https://dev-explorer.sky.trade/"),
   title: "SkyTrade Explorer",
   manifest: "/manifest.json",
   icons: {

@@ -13,7 +13,7 @@ import ReactMap, {
 import "maplibre-gl/dist/maplibre-gl.css"
 import Sidebar from "./sidebar/index"
 import { st } from "../styles/mapStyle"
-import { HexGridVisualization } from "./HexGridVisualization"
+import { HexGridVisualization } from "./OptimisedHexGridVisualisation"
 import * as h3 from "h3-js"
 import { useGeoDataCache } from "../hooks/useGeoDataCache"
 import { useDebounce } from "../hooks/useDebounce"

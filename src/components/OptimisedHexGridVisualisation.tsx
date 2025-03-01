@@ -33,24 +33,31 @@ export function getResolutionForZoom(
   performanceMode = false
 ): number {
   // In performance mode, we use lower resolutions (bigger hexagons, fewer to render)
-  const performanceOffset = performanceMode ? -1 : 0
+  //   const performanceOffset = performanceMode ? -1 : 0;
 
-  // Country level
-  if (zoom < 4) return Math.max(2, 2 + performanceOffset)
-  // Region level
-  if (zoom < 5.5) return Math.max(2, 3 + performanceOffset)
-  // State level
-  if (zoom < 7) return Math.max(3, 4 + performanceOffset)
-  // Metro area
-  if (zoom < 9) return Math.max(4, 5 + performanceOffset)
-  // City level
-  if (zoom < 11) return Math.max(5, 6 + performanceOffset)
-  // Neighborhood
-  if (zoom < 13) return Math.max(6, 7 + performanceOffset)
-  // Block level
-  if (zoom < 15) return Math.max(7, 8 + performanceOffset)
-  // Building level
-  return Math.max(8, 9 + performanceOffset)
+  //   // Country level
+  //   if (zoom < 4) return Math.max(2, 2 + performanceOffset);
+  //   // Region level
+  //   if (zoom < 5.5) return Math.max(2, 3 + performanceOffset);
+  //   // State level
+  //   if (zoom < 7) return Math.max(3, 4 + performanceOffset);
+  //   // Metro area
+  //   if (zoom < 9) return Math.max(4, 5 + performanceOffset);
+  //   // City level
+  //   if (zoom < 11) return Math.max(5, 6 + performanceOffset);
+  //   // Neighborhood
+  //   if (zoom < 13) return Math.max(6, 7 + performanceOffset);
+  //   // Block level
+  //   if (zoom < 15) return Math.max(7, 8 + performanceOffset);
+  //   // Building level
+  //   return Math.max(8, 9 + performanceOffset);
+  if (zoom < 4.5) return 3 // Region level
+  if (zoom < 6) return 4 // State level
+  if (zoom < 8) return 5 // Metro area
+  if (zoom < 10) return 6 // City level
+  if (zoom < 12) return 7 // Neighborhood
+  if (zoom < 14) return 8 // Block level
+  return 10
 }
 
 // Improved points to hex grid conversion with memory and performance optimizations
@@ -302,7 +309,7 @@ export function HexGridVisualization({
                     "rgba(176, 230, 241, 0)",
                     1,
                     "rgba(176, 230, 241, 0.7)",
-                    Math.ceil(maxCount / 2),
+                    maxCount / 2,
                     "rgba(113, 187, 212, 0.8)",
                     maxCount,
                     "rgba(71, 142, 155, 0.9)",
@@ -315,7 +322,7 @@ export function HexGridVisualization({
                     "rgba(241, 176, 176, 0)",
                     1,
                     "rgba(241, 176, 176, 0.7)",
-                    Math.ceil(maxCount / 2),
+                    maxCount / 2,
                     "rgba(212, 113, 113, 0.8)",
                     maxCount,
                     "rgba(155, 71, 71, 0.9)",
