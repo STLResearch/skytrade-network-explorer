@@ -17,6 +17,13 @@ import { HexGridVisualization } from "./HexGridVisualization"
 import * as h3 from "h3-js"
 import { useGeoDataCache } from "../hooks/useGeoDataCache"
 import { useDebounce } from "../hooks/useDebounce"
+import {
+  DronePoint,
+  PropertyPoint,
+  PointType,
+  GeoBounds,
+  TabType,
+} from "@/types"
 
 // Constants
 const INITIAL_MAP_VIEW_STATE = {
@@ -37,76 +44,6 @@ const USA_BOUNDS = {
 // Define API batch size limits
 const MAX_POINTS_PER_REQUEST = 500
 const MIN_ZOOM_FOR_FULL_DETAIL = 10
-
-// Define types that match the Sidebar component's expected types
-type DronePoint = {
-  id: string
-  userId: string
-  deviceLocationLat?: number
-  deviceLocationLng?: number
-  ipAddress: string
-  isTest: boolean
-  createdAt: string
-  remoteData?: {
-    name?: string
-    model?: string
-    status?: string
-    battery?: number
-    lastUpdate?: string
-  }
-}
-
-type PropertyPoint = {
-  id: string
-  title: string
-  address: string
-  hasLandingDeck: boolean
-  hasChargingStation: boolean
-  hasStorageHub: boolean
-  isRentableAirspace: boolean
-  latitude: number
-  longitude: number
-  noFlyZone: boolean
-  isBoostedArea: boolean
-  transitFee: string
-  ownerId: string
-}
-
-// Base type for points from API
-type PointType = {
-  id: string
-  title?: string
-  userId?: string
-  deviceLocationLat?: number
-  deviceLocationLng?: number
-  latitude?: number
-  longitude?: number
-  address?: string
-  price?: number
-  isRentableAirspace?: boolean
-  // Add additional properties from your API models
-  ipAddress?: string
-  isTest?: boolean
-  createdAt?: string
-  remoteData?: any
-  // Property specific fields
-  hasLandingDeck?: boolean
-  hasChargingStation?: boolean
-  hasStorageHub?: boolean
-  transitFee?: string
-  noFlyZone?: boolean
-  isBoostedArea?: boolean
-  ownerId?: string
-}
-
-// Types
-type TabType = "drone" | "air_space" | "both"
-type GeoBounds = {
-  north: number
-  south: number
-  east: number
-  west: number
-}
 
 // Helper function to get center coordinates from a hex
 function getHexCenter(hexId: string): [number, number] {
@@ -318,9 +255,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         dataType === "drone" ? dronePoints.length : airSpacePoints.length
       if (zoomDiff < 1.5 && dataPoints > 0 && zoom > prevZoom) {
         // On minor zoom in, we can use existing data
-        console.log(
-          `[${dataType}] Minor zoom change (${zoomDiff}), using existing data`
-        )
         return []
       }
 
@@ -332,9 +266,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         dataType === "drone" ? isDroneAreaCached : isAirSpaceAreaCached
       const areasNeeded = splitBounds.filter((area) => !checkCached(area, zoom))
 
-      console.log(
-        `[${dataType}] Identified ${areasNeeded.length} areas needing data at zoom ${zoom}`
-      )
       return areasNeeded
     },
     [
@@ -376,7 +307,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
 
       // Skip fetching if no new areas to fetch
       if (droneAreasToFetch.length === 0 && airSpaceAreasToFetch.length === 0) {
-        console.log("All visible areas already cached, skipping fetch")
         return
       }
 
@@ -398,8 +328,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
                 droneEndpoint.concat("&detailLevel=high")
               }
 
-              console.log("[DEBUG] Fetching drone data from:", droneEndpoint)
-
               const droneResponse = await fetch(droneEndpoint)
 
               if (!droneResponse.ok) {
@@ -407,11 +335,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
               }
 
               const droneData: PointType[] = await droneResponse.json()
-              console.log(
-                "[DEBUG] Received drone data:",
-                droneData.length,
-                "points"
-              )
 
               // Add to cache, avoiding duplicates
               setDronePoints((prev) => {
@@ -446,11 +369,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
                 airSpaceEndpoint.concat("&detailLevel=high")
               }
 
-              console.log(
-                "[DEBUG] Fetching airspace data from:",
-                airSpaceEndpoint
-              )
-
               const airSpaceResponse = await fetch(airSpaceEndpoint)
 
               if (!airSpaceResponse.ok) {
@@ -460,11 +378,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
               }
 
               const airSpaceData: PointType[] = await airSpaceResponse.json()
-              console.log(
-                "[DEBUG] Received airspace data:",
-                airSpaceData.length,
-                "points"
-              )
 
               // Add to cache, avoiding duplicates
               setAirSpacePoints((prev) => {
@@ -545,9 +458,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
 
       // If the new bounds are over 85% contained in a previous request, skip
       if (overlapArea / newArea > 0.85) {
-        console.log(
-          "New bounds mostly contained in previous request, skipping fetch"
-        )
         return false
       }
     }
@@ -867,9 +777,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
       // If we've already checked this hex and found no data, don't query again
       const hexCacheKey = `${hexId}-${type}`
       if (emptyHexesRef.current.has(hexCacheKey)) {
-        console.log(
-          `[${type}] Hex ${hexId} previously confirmed empty, skipping fetch`
-        )
         return []
       }
 
@@ -878,9 +785,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
 
       // If we have a reasonable number of points already, use them without API call
       if (pointsInHex.length > 0) {
-        console.log(
-          `[${type}] Using ${pointsInHex.length} cached points for hex ${hexId}`
-        )
         // If we have enough points, consider this a complete dataset
         if (pointsInHex.length >= 5) {
           return pointsInHex
@@ -895,7 +799,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
             ? `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/droneRadar/byHex/${hexId}`
             : `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/properties/byHex/${hexId}`
 
-        console.log(`[${type}] Fetching hex ${hexId} data from: ${endpoint}`)
         setHexSelectionState((prev) => ({ ...prev, isLoading: true, hexId }))
 
         // Get the h3 resolution for this hexId
@@ -927,9 +830,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         }
 
         const responseData: PointType[] = await response.json()
-        console.log(
-          `[${type}] Received ${responseData.length} points for hex ${hexId}`
-        )
 
         // Post-filter on the client side to exactly match the hex
         const filteredPoints = responseData.filter((point) => {
@@ -947,10 +847,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
             return false
           }
         })
-
-        console.log(
-          `[${type}] After filtering, ${filteredPoints.length} points are in hex ${hexId}`
-        )
 
         // If we didn't find any data, add to our empty hexes set to avoid future calls
         if (filteredPoints.length === 0) {
@@ -1007,8 +903,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
 
   const handleClick = useCallback(
     (event: MapLayerMouseEvent) => {
-      console.log("[DEBUG] Map click event:", event.features)
-
       // Check if we clicked on a hex cell
       const hexFeatures = event.features?.filter(
         (f) => f.source?.startsWith("hex-source-") && f.properties?.hexId
@@ -1039,10 +933,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
             resolution >= 7
 
           if (shouldFetchDetails) {
-            // Asynchronously load the full hex data
-            console.log(
-              `[${type}] Loading full hex data for ${hexId} with ${pointCount} points`
-            )
             loadHexData(hexId, type).then((fullPoints) => {
               // Update the sidebar with the full dataset
               setSelectedHexPoints(fullPoints)
@@ -1261,23 +1151,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
           onClose={handleClose}
         />
       )}
-
-      {/* Legend */}
-      {/* <div className="absolute top-4 left-4 bg-white dark:bg-zinc-800 bg-opacity-90 dark:bg-opacity-90 p-3 rounded-md shadow-md dark:text-zinc-200">
-        <div className="font-semibold text-sm mb-2">Legend</div>
-        {(tab === 'drone' || tab === 'both') && (
-          <div className="flex items-center mb-1">
-            <div className="w-4 h-4 rounded-sm mr-2" style={{ backgroundColor: 'rgba(71, 142, 155, 0.7)' }}></div>
-            <span>Drone Radar</span>
-          </div>
-        )}
-        {(tab === 'air_space' || tab === 'both') && (
-          <div className="flex items-center">
-            <div className="w-4 h-4 rounded-sm mr-2" style={{ backgroundColor: 'rgba(155, 71, 71, 0.7)' }}></div>
-            <span>Air Space</span>
-          </div>
-        )}
-      </div> */}
     </div>
   )
 }

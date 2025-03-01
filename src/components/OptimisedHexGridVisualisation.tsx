@@ -64,10 +64,6 @@ export function pointsToHexGrid(
     return { type: "FeatureCollection", features: [] }
   }
 
-  console.log(
-    `[${tab}] Creating hex grid from ${points.length} points at resolution ${resolution}`
-  )
-
   // Use a Map for better performance when counting points per cell
   const hexBins = new Map<string, number>()
 
@@ -102,9 +98,6 @@ export function pointsToHexGrid(
   if (hexEntries.length > maxFeatures) {
     hexEntries.sort((a, b) => b[1] - a[1]) // Sort by count descending
     hexEntries = hexEntries.slice(0, maxFeatures)
-    console.log(
-      `[${tab}] Limiting to top ${maxFeatures} hexes out of ${hexBins.size} total`
-    )
   }
 
   // Convert the hex bins to GeoJSON features
@@ -214,9 +207,6 @@ export function HexGridVisualization({
     if (hexGridCache.current.has(cacheKey)) {
       const cachedGrid = hexGridCache.current.get(cacheKey)
       if (cachedGrid) {
-        console.log(
-          `[${tab}] Using cached hex grid for resolution ${resolution}`
-        )
         setHexGridData(cachedGrid)
         setStats({
           hexCells: cachedGrid.features.length,
