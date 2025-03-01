@@ -1,5 +1,6 @@
+import { HexGridMap } from "@/components/OptimisedHexGridMap"
 import { HotspotsMap } from "@/components/HotspotsMap"
 
 export default async function Page() {
-  return <HotspotsMap tab="drone" />
+  return <HexGridMap tab="drone" />
 }
