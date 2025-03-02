@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { PointType } from "@/types" // Adjust the import based on your file structure
+import { PointType } from "@/types"
 
-// Optionally, include your CachedArea type if you need to cache bounding boxes as well
 export type CachedArea = {
   bounds: {
     north: number
