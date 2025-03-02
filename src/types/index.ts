@@ -65,3 +65,5 @@ export type GeoBounds = {
   east: number
   west: number
 }
+// Add this to your types.ts file
+export type DataType = "drone" | "air_space"

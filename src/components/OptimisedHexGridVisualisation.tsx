@@ -32,32 +32,18 @@ export function getResolutionForZoom(
   zoom: number,
   performanceMode = false
 ): number {
-  // In performance mode, we use lower resolutions (bigger hexagons, fewer to render)
-  //   const performanceOffset = performanceMode ? -1 : 0;
+  //   In performance mode, we use lower resolutions (bigger hexagons, fewer to render)
+  const performanceOffset = performanceMode ? -1 : 0
 
-  //   // Country level
-  //   if (zoom < 4) return Math.max(2, 2 + performanceOffset);
-  //   // Region level
-  //   if (zoom < 5.5) return Math.max(2, 3 + performanceOffset);
-  //   // State level
-  //   if (zoom < 7) return Math.max(3, 4 + performanceOffset);
-  //   // Metro area
-  //   if (zoom < 9) return Math.max(4, 5 + performanceOffset);
-  //   // City level
-  //   if (zoom < 11) return Math.max(5, 6 + performanceOffset);
-  //   // Neighborhood
-  //   if (zoom < 13) return Math.max(6, 7 + performanceOffset);
-  //   // Block level
-  //   if (zoom < 15) return Math.max(7, 8 + performanceOffset);
-  //   // Building level
-  //   return Math.max(8, 9 + performanceOffset);
-  if (zoom < 4.5) return 3 // Region level
-  if (zoom < 6) return 4 // State level
-  if (zoom < 8) return 5 // Metro area
-  if (zoom < 10) return 6 // City level
-  if (zoom < 12) return 7 // Neighborhood
-  if (zoom < 14) return 8 // Block level
-  return 10
+  if (zoom < 3) return Math.max(2, 2 + performanceOffset) // Very coarse
+  if (zoom < 4) return Math.max(3, 3 + performanceOffset)
+  if (zoom < 5.5) return Math.max(4, 4 + performanceOffset)
+  if (zoom < 7) return Math.max(5, 5 + performanceOffset)
+  if (zoom < 9) return Math.max(6, 6 + performanceOffset)
+  if (zoom < 11) return Math.max(7, 7 + performanceOffset)
+  if (zoom < 13) return Math.max(8, 8 + performanceOffset)
+  if (zoom < 15) return Math.max(9, 9 + performanceOffset)
+  return Math.max(10, 10 + performanceOffset) // Very fine
 }
 
 // Improved points to hex grid conversion with memory and performance optimizations
@@ -301,33 +287,37 @@ export function HexGridVisualization({
           paint={{
             "fill-color":
               tab === "drone"
-                ? [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "count"],
-                    0,
-                    "rgba(176, 230, 241, 0)",
-                    1,
-                    "rgba(176, 230, 241, 0.7)",
-                    maxCount / 2,
-                    "rgba(113, 187, 212, 0.8)",
-                    maxCount,
-                    "rgba(71, 142, 155, 0.9)",
-                  ]
+                ? maxCount <= 2
+                  ? "rgba(153, 216, 201, 0.8)"
+                  : [
+                      "interpolate",
+                      ["linear"],
+                      ["get", "count"],
+                      0,
+                      "rgba(229, 245, 249, 0)",
+                      1,
+                      "rgba(229, 245, 249, 0.7)",
+                      maxCount / 2,
+                      "rgba(153, 216, 201, 0.8)",
+                      maxCount,
+                      "rgba(44, 162, 95, 0.9)",
+                    ]
+                : maxCount <= 2
+                ? "rgba(241, 238, 246, 0.7)"
                 : [
                     "interpolate",
                     ["linear"],
                     ["get", "count"],
                     0,
-                    "rgba(241, 176, 176, 0)",
+                    "rgba(241, 238, 246, 0)",
                     1,
-                    "rgba(241, 176, 176, 0.7)",
+                    "rgba(241, 238, 246, 0.7)",
                     maxCount / 2,
-                    "rgba(212, 113, 113, 0.8)",
+                    "rgba(215, 181, 216, 0.8)",
                     maxCount,
-                    "rgba(155, 71, 71, 0.9)",
+                    "rgba(117, 107, 177, 0.9)",
                   ],
-            "fill-opacity": 0.9,
+            "fill-opacity": 0.7,
           }}
         />
 
@@ -344,13 +334,13 @@ export function HexGridVisualization({
               ["linear"],
               ["zoom"],
               5,
-              0.5,
+              0.3,
               12,
-              1,
+              0.8,
               16,
-              1.5,
+              1.2,
             ],
-            "line-opacity": 0.8,
+            "line-opacity": 0.6,
           }}
         />
 
