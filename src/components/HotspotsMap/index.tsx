@@ -510,14 +510,14 @@ export function HotspotsMap({ tab }: { tab: "drone" | "air_space" }) {
         </div>
       )}
 
-      {showPopup && (
+      {/* {showPopup && (
         <Sidebar
           hexId={selectedPointId ?? ""}
           price={selectedPrice}
           propertyName={propertyName}
           onClose={handleClose}
         />
-      )}
+      )} */}
 
       <Source
         id="points"
