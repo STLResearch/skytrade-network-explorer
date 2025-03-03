@@ -187,7 +187,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         return []
       }
       const splitBounds = splitBoundsIfNeeded(bounds, zoom)
-      // NOTE: With Redux, you can add additional caching logic here if desired.
       return splitBounds
     },
     [dronePoints.length, airSpacePoints.length]
@@ -236,7 +235,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
               const droneData: PointType[] = await droneResponse.json()
               // Dispatch action to add new drone points to Redux
               dispatch(addDronePoints(droneData))
-              // (Optional: update caching for this area in Redux if desired)
             } catch (error) {
               console.error("Error fetching drone data:", error)
               throw error
@@ -747,9 +745,9 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         )}
 
         {error && (
-          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 transform items-center space-x-2 rounded-md border border-red-400 bg-red-100 px-4 py-2 text-red-700 shadow-md dark:border-red-700 dark:bg-red-900/50 dark:text-red-300">
+          <div className="absolute left-1/2 top-1/2 z-50 flex w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 transform items-center space-x-2 rounded-md border border-red-400 bg-red-100 px-6 py-3 text-red-700 shadow-lg dark:border-red-700 dark:bg-red-900/50 dark:text-red-300">
             <svg
-              className="h-5 w-5 text-red-500 dark:text-red-400"
+              className="h-6 w-6 text-red-500 dark:text-red-400"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -759,9 +757,9 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
                 clipRule="evenodd"
               />
             </svg>
-            <span>{error}</span>
+            <span className="flex-1 text-sm">{error}</span>
             <button
-              className="ml-2 rounded-md bg-red-200 px-2 py-1 text-xs text-red-800 hover:bg-red-300 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700"
+              className="rounded-md bg-red-200 px-3 py-1.5 text-xs text-red-800 hover:bg-red-300 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700"
               onClick={() => fetchData(currentBounds)}
             >
               Retry
