@@ -224,7 +224,7 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         for (const area of droneAreasToFetch) {
           const fetchDronePromise = async () => {
             try {
-              let droneEndpoint = `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/droneRadar/?maxLatitude=${area.north}&minLatitude=${area.south}&maxLongitude=${area.east}&minLongitude=${area.west}&limit=${MAX_POINTS_PER_REQUEST}`
+              let droneEndpoint = `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/drone-radar/?maxLatitude=${area.north}&minLatitude=${area.south}&maxLongitude=${area.east}&minLongitude=${area.west}&limit=${MAX_POINTS_PER_REQUEST}`
               if (currentZoom >= MIN_ZOOM_FOR_FULL_DETAIL) {
                 droneEndpoint = droneEndpoint.concat("&detailLevel=high")
               }
@@ -320,7 +320,6 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
     }
   }, [debouncedBounds, isMapIdle, fetchData, shouldFetchForBounds])
 
-  // Filtering points using spatial binning remains the same.
   const visibleDronePoints = useMemo(() => {
     if (!currentBounds) return dronePoints
     if (dronePoints.length > 10000) {
@@ -564,7 +563,7 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
       try {
         const endpoint =
           type === "drone"
-            ? `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/droneRadar/byHex/${hexId}`
+            ? `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/drone-radar/byHex/${hexId}`
             : `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/properties/byHex/${hexId}`
         setHexSelectionState((prev) => ({ ...prev, isLoading: true, hexId }))
         const resolution = h3.getResolution(hexId)
@@ -577,7 +576,7 @@ export function HexGridMap({ tab = "both" }: { tab?: TabType }) {
         const west = Math.min(...longitudes)
         const apiUrl =
           type === "drone"
-            ? `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/droneRadar/?maxLatitude=${north}&minLatitude=${south}&maxLongitude=${east}&minLongitude=${west}&limit=500`
+            ? `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/drone-radar/?maxLatitude=${north}&minLatitude=${south}&maxLongitude=${east}&minLongitude=${west}&limit=500`
             : `${process.env.NEXT_PUBLIC_SKY_TRADE_API_URL}/properties/?maxLatitude=${north}&minLatitude=${south}&maxLongitude=${east}&minLongitude=${west}&limit=500`
         const response = await fetch(apiUrl)
         if (!response.ok) {
