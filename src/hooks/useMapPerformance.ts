@@ -22,9 +22,9 @@ export function useMapPerformance() {
         setFps(measuredFps)
 
         // Auto-enable performance mode if FPS drops below threshold
-        if (measuredFps < 20 && !isPerformanceMode) {
+        if (measuredFps < 30 && !isPerformanceMode) {
           setIsPerformanceMode(true)
-        } else if (measuredFps > 40 && isPerformanceMode) {
+        } else if (measuredFps > 45 && isPerformanceMode) {
           setIsPerformanceMode(false)
         }
 

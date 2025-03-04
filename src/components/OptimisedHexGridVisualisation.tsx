@@ -12,7 +12,6 @@ type PointType = {
   longitude?: number
   deviceLocationLat?: number
   deviceLocationLng?: number
-  // Other properties
 }
 
 interface HexGridVisualizationProps {
@@ -46,7 +45,6 @@ export function getResolutionForZoom(
   return Math.max(10, 10 + performanceOffset) // Very fine
 }
 
-// Improved points to hex grid conversion with memory and performance optimizations
 export function pointsToHexGrid(
   points: PointType[],
   resolution: number,
@@ -57,13 +55,10 @@ export function pointsToHexGrid(
     return { type: "FeatureCollection", features: [] }
   }
 
-  // Use a Map for better performance when counting points per cell
   const hexBins = new Map<string, number>()
 
-  // Track valid points for debugging
   let validPoints = 0
 
-  // Process each point
   for (const point of points) {
     // Get coordinates based on point type
     const lat = point.latitude ?? point.deviceLocationLat
@@ -93,7 +88,6 @@ export function pointsToHexGrid(
     hexEntries = hexEntries.slice(0, maxFeatures)
   }
 
-  // Convert the hex bins to GeoJSON features
   const features: Feature<Polygon>[] = []
 
   for (const [hexId, count] of hexEntries) {
@@ -128,40 +122,33 @@ export function pointsToHexGrid(
   }
 }
 
-// Optimized component to render the hex grid
 export function HexGridVisualization({
   mapRef,
   points,
   currentZoom,
   tab,
 }: HexGridVisualizationProps) {
-  // Use our performance monitoring hook
   const { isPerformanceMode, getPerformanceRecommendations } =
     useMapPerformance()
 
-  // State to store the hex grid data
   const [hexGridData, setHexGridData] = useState<FeatureCollection>({
     type: "FeatureCollection",
     features: [],
   })
 
-  // Stats for debugging and user feedback
   const [stats, setStats] = useState({
     hexCells: 0,
     pointsProcessed: 0,
     generationTime: 0,
   })
 
-  // Get performance recommendations
   const perfRecs = getPerformanceRecommendations()
 
-  // Determine the appropriate resolution based on zoom and performance mode
   const resolution = useMemo(
     () => getResolutionForZoom(currentZoom, isPerformanceMode),
     [currentZoom, isPerformanceMode]
   )
 
-  // Determine how many features we should render based on performance
   const maxFeatures = useMemo(() => {
     return isPerformanceMode
       ? perfRecs.maxVisiblePoints / 2
@@ -181,10 +168,8 @@ export function HexGridVisualization({
     return points
   }, [points])
 
-  // Cached hex grid reference to avoid redundant calculations
   const hexGridCache = useRef(new Map<string, FeatureCollection>())
 
-  // Generate hex grid data efficiently with caching by resolution
   const generateHexGrid = useCallback(() => {
     if (throttledPoints.length === 0) {
       setHexGridData({ type: "FeatureCollection", features: [] })
@@ -204,13 +189,12 @@ export function HexGridVisualization({
         setStats({
           hexCells: cachedGrid.features.length,
           pointsProcessed: throttledPoints.length,
-          generationTime: 0, // Cached, so no generation time
+          generationTime: 0,
         })
         return
       }
     }
 
-    // Wasn't in cache, so calculate new grid
     const startTime = performance.now()
 
     try {
@@ -222,12 +206,9 @@ export function HexGridVisualization({
       )
       setHexGridData(newHexGrid)
 
-      // Save to cache for future use
       hexGridCache.current.set(cacheKey, newHexGrid)
 
-      // Keep cache size under control
       if (hexGridCache.current.size > 10) {
-        // Remove oldest entries - convert to array, sort, and take newest entries
         const entries = Array.from(hexGridCache.current.entries())
         entries.sort((a, b) => {
           // Extract resolution numbers from keys for comparison
@@ -264,7 +245,7 @@ export function HexGridVisualization({
   const maxCount = useMemo(() => {
     return Math.max(
       ...hexGridData.features.map((f) => f.properties?.count || 0),
-      1 // Fallback in case no features exist
+      1
     )
   }, [hexGridData.features])
 
@@ -273,7 +254,6 @@ export function HexGridVisualization({
     return null
   }
 
-  // Source ID for this visualization
   const sourceId = `hex-source-${tab}`
 
   return (
